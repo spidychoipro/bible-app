@@ -246,23 +246,6 @@
       clearTimeout(timeout);
       loading.classList.add('hide');
       handleHash();
-      if (!location.hash) {
-        const pos = loadPosition();
-        if (pos && findBook(pos.book)) {
-          showChapter(pos.book, pos.ch);
-          if (pos.v) {
-            setTimeout(() => {
-              const el = content.querySelector(`[data-v="${pos.v}"]`);
-              if (el) {
-                el.classList.add('selected');
-                const cb = document.querySelector('.copy-btn');
-                if (cb) cb.classList.add('show');
-                el.scrollIntoView({block:'center', behavior:'smooth'});
-              }
-            }, 150);
-          }
-        }
-      }
     } catch(e) {
       clearTimeout(timeout);
       loading.innerHTML = '데이터를 불러오는데 실패했습니다<br><small>인터넷 연결을 확인하거나<br>페이지를 새로고침해주세요</small>';
@@ -280,13 +263,38 @@
     currentBook = null; currentChapter = null;
     setTitle('성경');
     showBack(false);
+    const pos = loadPosition();
+    const resumeHtml = (pos && findBook(pos.book)) ? `
+      <div class="resume-bar" id="resumeBar">
+        <span>${pos.v ? pos.book + ' ' + pos.ch + ':' + pos.v : pos.book + ' ' + pos.ch + '장'}</span>
+        <button id="resumeBtn">이어서 읽기</button>
+      </div>
+    ` : '';
     content.innerHTML = `
+      ${resumeHtml}
       <div class="testament-tabs">
         <button class="active" data-t="ot">구약</button>
         <button data-t="nt">신약</button>
       </div>
       <div class="book-list" id="bookList"></div>
     `;
+    const resumeBtn = $('#resumeBtn');
+    if (resumeBtn) {
+      resumeBtn.addEventListener('click', () => {
+        showChapter(pos.book, pos.ch);
+        if (pos.v) {
+          setTimeout(() => {
+            const el = content.querySelector(`[data-v="${pos.v}"]`);
+            if (el) {
+              el.classList.add('selected');
+              const cb = document.querySelector('.copy-btn');
+              if (cb) cb.classList.add('show');
+              el.scrollIntoView({block:'center', behavior:'smooth'});
+            }
+          }, 150);
+        }
+      });
+    }
     const tabs = $$('.testament-tabs button');
     tabs.forEach(t => t.addEventListener('click', () => {
       tabs.forEach(x=>x.classList.remove('active'));

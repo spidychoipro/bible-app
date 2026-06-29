@@ -148,6 +148,18 @@ main {
 }
 #loading.hide { opacity: 0; pointer-events: none; }
 
+/* Resume bar */
+.resume-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--accent); color: #fff; gap: 8px;
+}
+.resume-bar span { font-size: 0.85em; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resume-bar button {
+  flex-shrink: 0; padding: 6px 16px; border: 2px solid #fff; border-radius: 8px;
+  background: transparent; color: #fff; font-size: 0.8em; font-weight: 600; cursor: pointer; transition: background 0.15s;
+}
+.resume-bar button:hover { background: rgba(255,255,255,0.2); }
+
 /* Testament tabs */
 .testament-tabs { display: flex; border-bottom: 2px solid var(--border); }
 .testament-tabs button {
