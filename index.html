@@ -28,6 +28,15 @@
   <div id="loading">불러오는 중...</div>
 </div>
 <div id="settingsOverlay"></div>
+<script>
+// 방문할 때마다 캐시 + SW 정리 (한 번만)
+if ('caches' in self) { caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }).catch(function(){}); }
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    Promise.all(regs.map(function(r){ return r.unregister(); }));
+  }).catch(function(){});
+}
+</script>
 <script src="app.js"></script>
 </body>
 </html>
