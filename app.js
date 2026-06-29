@@ -339,12 +339,12 @@
     `;
     content.querySelectorAll('.vs-item').forEach(btn => {
       btn.addEventListener('click', function() {
-        location.hash = `#book=${encodeURIComponent(koName)}&ch=${chNum}&v=${this.dataset.v}`;
+        showChapter(koName, chNum, parseInt(this.dataset.v));
       });
     });
   }
 
-  function showChapter(koName, chNum) {
+  function showChapter(koName, chNum, targetVerse) {
     currentView = 'chapter';
     currentBook = koName; currentChapter = chNum;
     setTitle(`${koName} ${chNum}장`);
@@ -410,6 +410,19 @@
         });
       });
 
+    /* ─── Scroll to target verse ─── */
+    if (targetVerse) {
+      requestAnimationFrame(() => {
+        const el = content.querySelector(`[data-v="${targetVerse}"]`);
+        if (el) {
+          content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+          el.classList.add('selected');
+          if (typeof updateCopyBtn === 'function') updateCopyBtn();
+          el.scrollIntoView({block:'center', behavior:'smooth'});
+        }
+      });
+    }
+
     /* ─── Swipe navigation ─── */
     content.addEventListener('touchstart', e => {
       const t = e.changedTouches[0];
@@ -471,16 +484,7 @@
     `;
     content.querySelectorAll('.search-item').forEach(el => {
       el.addEventListener('click', () => {
-        showChapter(el.dataset.book, parseInt(el.dataset.ch));
-        setTimeout(() => {
-          const v = el.dataset.v;
-          const target = content.querySelector(`[data-v="${v}"]`);
-          if (target) {
-            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-            target.classList.add('selected');
-            target.scrollIntoView({block:'center', behavior:'smooth'});
-          }
-        }, 100);
+        showChapter(el.dataset.book, parseInt(el.dataset.ch), parseInt(el.dataset.v));
       });
     });
   }
@@ -499,21 +503,7 @@
     const ch = params.get('ch');
     const v = params.get('v');
     if (book && ch) {
-      showChapter(book, parseInt(ch));
-      if (v) {
-        const vn = parseInt(v);
-        if (vn > 0) {
-          setTimeout(() => {
-            const el = content.querySelector(`[data-v="${vn}"]`);
-            if (el) {
-              content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-              el.classList.add('selected');
-              if (typeof updateCopyBtn === 'function') updateCopyBtn();
-              el.scrollIntoView({block:'center', behavior:'smooth'});
-            }
-          }, 0);
-        }
-      }
+      showChapter(book, parseInt(ch), v ? parseInt(v) : null);
     }
     else if (book) { showBook(book); }
     else { showHome(); }
