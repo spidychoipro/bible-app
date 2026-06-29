@@ -390,7 +390,7 @@
     if (prev) prev.addEventListener('click', () => showChapter(koName, chNum-1));
     if (next) next.addEventListener('click', () => showChapter(koName, chNum+1));
 
-    /* ─── Copy button ─── */
+    /* ─── Copy & deselect buttons ─── */
     let copyBtn = document.querySelector('.copy-btn');
     if (!copyBtn) {
       copyBtn = document.createElement('button');
@@ -411,11 +411,23 @@
         });
       });
     }
+    let deselectBtn = document.querySelector('body > .deselect-btn');
+    if (!deselectBtn) {
+      deselectBtn = document.createElement('button');
+      deselectBtn.className = 'deselect-btn';
+      deselectBtn.textContent = '선택 안함';
+      document.body.appendChild(deselectBtn);
+      deselectBtn.addEventListener('click', () => {
+        showChapter(currentBook, currentChapter);
+      });
+    }
 
     let updateCopyBtn = function() {
       const sel = content.querySelector('.verse-item.selected');
       const copy = document.querySelector('.copy-btn');
+      const deselect = document.querySelector('body > .deselect-btn');
       if (copy) copy.classList.toggle('show', !!sel);
+      if (deselect) deselect.classList.toggle('show', !!sel);
     };
 
       content.querySelectorAll('.verse-item').forEach(el => {
