@@ -414,6 +414,19 @@
     if (targetVerse) {
       requestAnimationFrame(() => {
         const el = content.querySelector(`[data-v="${targetVerse}"]`);
+        const dbg = document.getElementById('loading');
+        if (dbg) {
+          dbg.classList.remove('hide');
+          dbg.style.background = 'rgba(0,0,0,0.85)';
+          dbg.style.color = '#ff0';
+          dbg.style.fontSize = '16px';
+          dbg.style.padding = '30px';
+          dbg.style.alignItems = 'flex-start';
+          dbg.style.justifyContent = 'flex-start';
+          dbg.style.pointerEvents = 'auto';
+          dbg.style.opacity = '1';
+          dbg.innerHTML = '<b>DEBUG:</b><br>targetVerse=' + targetVerse + '<br>el=' + (el ? el.tagName + '[data-v=' + el.dataset.v + ']' : 'null') + '<br>verses in DOM: ' + content.querySelectorAll('.verse-item').length;
+        }
         if (el) {
           content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
           el.classList.add('selected');
