@@ -275,8 +275,25 @@
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
       clearTimeout(timeout);
-      loading.classList.add('hide');
-      handleHash();
+      // 새로고침(reload) 시 해시를 비우고 홈 화면으로 이동 (Option 2)
+      let isReload = false;
+      try {
+        const navs = performance.getEntriesByType('navigation');
+        if (navs && navs.length > 0) {
+          isReload = navs[0].type === 'reload';
+        } else {
+          isReload = performance.navigation.type === 1;
+        }
+      } catch (e) {}
+
+      if (isReload) {
+        if (location.hash) {
+          history.replaceState(null, '', location.pathname + location.search);
+        }
+        showHome();
+      } else {
+        handleHash();
+      }
     } catch(e) {
       clearTimeout(timeout);
       loading.innerHTML = '데이터를 불러오는데 실패했습니다<br><small>' + e.message + '<br>인터넷 연결을 확인하거나 페이지를 새로고침해주세요</small>';
