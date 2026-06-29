@@ -379,14 +379,10 @@ main {
 
 /* Deselect button */
 .deselect-btn {
-  position: fixed; bottom: 76px; right: 16px; z-index: 20;
+  display: block; margin: 16px auto 0; padding: 10px 24px;
   background: var(--surface); border: 1px solid var(--border); color: var(--accent);
-  font-size: 0.8em; cursor: pointer; padding: 6px 12px; border-radius: 16px;
-  box-shadow: 0 2px 8px var(--shadow);
-  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  font-size: 0.85em; cursor: pointer; border-radius: 20px; width: fit-content;
 }
-.deselect-btn.show { opacity: 1; pointer-events: auto; }
-.deselect-btn:hover { text-decoration: underline; }
 
 /* Progress dot on chapter items */
 .chapter-item.has-read { position: relative; }

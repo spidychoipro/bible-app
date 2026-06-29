@@ -351,12 +351,15 @@
         <span>${verses.length}절</span>
       </div>
       <div class="vs-grid">${verses.map((_,i)=>`<button class="vs-item" data-v="${i+1}">${i+1}</button>`).join('')}</div>
+      <button class="deselect-btn" id="deselectVerse">선택 안함</button>
     `;
     content.querySelectorAll('.vs-item').forEach(btn => {
       btn.addEventListener('click', function() {
         showChapter(koName, chNum, parseInt(this.dataset.v));
       });
     });
+    const ds = $('#deselectVerse');
+    if (ds) ds.addEventListener('click', () => showChapter(koName, chNum));
   }
 
   function showChapter(koName, chNum, targetVerse) {
@@ -387,9 +390,8 @@
     if (prev) prev.addEventListener('click', () => showChapter(koName, chNum-1));
     if (next) next.addEventListener('click', () => showChapter(koName, chNum+1));
 
-    /* ─── Action buttons (copy + deselect) ─── */
+    /* ─── Copy button ─── */
     let copyBtn = document.querySelector('.copy-btn');
-    let deselectBtn = document.querySelector('.deselect-btn');
     if (!copyBtn) {
       copyBtn = document.createElement('button');
       copyBtn.className = 'copy-btn';
@@ -409,22 +411,11 @@
         });
       });
     }
-    if (!deselectBtn) {
-      deselectBtn = document.createElement('button');
-      deselectBtn.className = 'deselect-btn';
-      deselectBtn.textContent = '선택 안함';
-      document.body.appendChild(deselectBtn);
-      deselectBtn.addEventListener('click', () => {
-        showChapter(currentBook, currentChapter);
-      });
-    }
 
     let updateCopyBtn = function() {
       const sel = content.querySelector('.verse-item.selected');
       const copy = document.querySelector('.copy-btn');
-      const deselect = document.querySelector('.deselect-btn');
       if (copy) copy.classList.toggle('show', !!sel);
-      if (deselect) deselect.classList.toggle('show', !!sel);
     };
 
       content.querySelectorAll('.verse-item').forEach(el => {
