@@ -418,7 +418,9 @@
         content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
         el.classList.add('selected');
         if (typeof updateCopyBtn === 'function') updateCopyBtn();
-        el.scrollIntoView(true);
+        const main = document.querySelector('main');
+        const offset = el.offsetTop - main.offsetTop - 60;
+        main.scrollTop = offset;
       }, 100);
     }
 
