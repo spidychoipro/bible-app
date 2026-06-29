@@ -321,18 +321,23 @@
     function doJump() {
       const ch = parseInt(jumpCh.value);
       const v = parseInt(jumpV.value);
-      if (ch >= 1 && ch <= book.chapters.length && v >= 1 && v <= book.chapters[ch-1].length) {
-        showChapter(koName, ch);
-        setTimeout(() => {
-          const target = content.querySelector(`[data-v="${v}"]`);
-          if (target) {
-            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-            target.classList.add('selected');
-            if (typeof window.updateCopyBtn === 'function') window.updateCopyBtn();
-            target.scrollIntoView({block:'center', behavior:'smooth'});
-          }
-        }, 150);
-        jumpCh.value = ''; jumpV.value = '';
+      if (ch >= 1 && ch <= book.chapters.length) {
+        if (v >= 1 && v <= book.chapters[ch-1].length) {
+          showChapter(koName, ch);
+          setTimeout(() => {
+            const target = content.querySelector(`[data-v="${v}"]`);
+            if (target) {
+              content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+              target.classList.add('selected');
+              if (typeof window.updateCopyBtn === 'function') window.updateCopyBtn();
+              target.scrollIntoView({block:'center', behavior:'smooth'});
+            }
+          }, 150);
+          jumpCh.value = ''; jumpV.value = '';
+        } else if (!jumpV.value) {
+          showChapter(koName, ch);
+          jumpCh.value = ''; jumpV.value = '';
+        }
       }
     }
     jumpBtn.addEventListener('click', doJump);
@@ -340,7 +345,10 @@
     jumpCh.addEventListener('keydown', e => { if (e.key === 'Enter') jumpV.focus(); });
 
     content.querySelectorAll('.chapter-item').forEach(el => {
-      el.addEventListener('click', () => showChapter(koName, parseInt(el.dataset.ch)));
+      el.addEventListener('click', () => {
+        jumpCh.value = el.dataset.ch;
+        jumpV.focus();
+      });
     });
   }
 
