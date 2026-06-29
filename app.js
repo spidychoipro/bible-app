@@ -338,22 +338,13 @@
       <div class="vs-grid">${verses.map((_,i)=>`<button class="vs-item" data-v="${i+1}">${i+1}</button>`).join('')}</div>
     `;
     content.querySelectorAll('.vs-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        showChapter(koName, chNum);
-        setTimeout(() => {
-          const target = content.querySelector(`[data-v="${btn.dataset.v}"]`);
-          if (target) {
-            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-            target.classList.add('selected');
-            if (typeof window.updateCopyBtn === 'function') window.updateCopyBtn();
-            target.scrollIntoView({block:'center', behavior:'smooth'});
-          }
-        }, 150);
+      btn.addEventListener('click', function() {
+        showChapter(koName, chNum, parseInt(this.dataset.v));
       });
     });
   }
 
-  function showChapter(koName, chNum) {
+  function showChapter(koName, chNum, goToVerse) {
     currentView = 'chapter';
     currentBook = koName; currentChapter = chNum;
     setTitle(`${koName} ${chNum}장`);
@@ -362,7 +353,7 @@
     if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">장을 찾을 수 없습니다</p>'; return; }
     const verses = book.chapters[chNum-1];
     const query = new URLSearchParams(location.hash.slice(1)).get('v');
-    const highlightVerse = query ? parseInt(query) : null;
+    const highlightVerse = goToVerse || (query ? parseInt(query) : null);
 
     content.innerHTML = `
       <div class="verse-view">
@@ -448,7 +439,12 @@
       if (highlightVerse) {
         setTimeout(() => {
           const el = content.querySelector(`[data-v="${highlightVerse}"]`);
-          if (el) el.scrollIntoView({block:'center', behavior:'smooth'});
+          if (el) {
+            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+            el.classList.add('selected');
+            if (typeof updateCopyBtn === 'function') updateCopyBtn();
+            el.scrollIntoView({block:'center', behavior:'smooth'});
+          }
         }, 100);
       }
 
