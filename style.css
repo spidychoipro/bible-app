@@ -224,17 +224,19 @@ main {
 /* Verse view */
 .verse-view { padding: 14px; }
 .vs-grid {
-  display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(64px,1fr));
-  padding: 14px; max-height: 75vh; overflow-y: auto; align-content: start;
+  display: grid; gap: 8px; padding: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(48px,1fr));
+}
+@media (min-width: 600px) {
+  .vs-grid { padding: 20px; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(54px,1fr)); }
 }
 .vs-item {
-  padding: 16px 4px; text-align: center; border: 2px solid var(--border);
-  border-radius: 10px; background: var(--surface); color: var(--text);
-  font-size: 1.05em; font-weight: 700; cursor: pointer; transition: all 0.1s;
-  min-height: 48px; display: flex; align-items: center; justify-content: center;
+  padding: 12px 0; text-align: center; background: var(--surface);
+  border-radius: 8px; box-shadow: 0 1px 2px var(--shadow); cursor: pointer;
+  font-size: 0.85em; font-weight: 500; transition: all 0.15s;
 }
-.vs-item:hover { border-color: var(--accent); background: var(--hover); }
-.vs-item.selected { border-color: var(--accent); background: var(--accent); color: #fff; }
+.vs-item:hover { background: var(--accent); color: #fff; }
+.vs-item.selected { background: var(--accent); color: #fff; }
 .verse-item {
   padding: 6px 12px; border-radius: 6px; margin-bottom: 2px;
   transition: background 0.15s; cursor: pointer; position: relative;
