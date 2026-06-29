@@ -390,6 +390,10 @@
       </div>
     `;
 
+    // Reset scroll position to top
+    content.scrollTop = 0;
+    window.scrollTo(0, 0);
+
     const prev = $('#prevCh');
     const next = $('#nextCh');
     if (prev) {
