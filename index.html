@@ -18,7 +18,7 @@
     <button id="btnBack" style="visibility:hidden" aria-label="뒤로">←</button>
     <h1 id="title">성경</h1>
     <button id="btnSearch" aria-label="검색">🔍</button>
-    <button id="btnDark" aria-label="테마">🌙</button>
+    <button id="btnSettings" aria-label="설정">⚙️</button>
   </header>
   <div id="searchBar" style="display:none">
     <input type="text" id="searchInput" placeholder="검색어 입력..." autocomplete="off">
@@ -27,6 +27,7 @@
   <main id="content"></main>
   <div id="loading">불러오는 중...</div>
 </div>
+<div id="settingsOverlay"></div>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(()=>{});
