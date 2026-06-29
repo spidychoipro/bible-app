@@ -234,20 +234,8 @@ main {
   background: var(--accent); color: #fff; font-size: 0.85em; cursor: pointer;
 }
 
-/* View toggle (chapter / verse selector) */
-.view-toggle {
-  display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;
-}
-.view-toggle .vt-btn {
-  padding: 6px 16px; border: 2px solid var(--border); border-radius: 8px;
-  background: var(--surface); color: var(--text-dim); font-size: 0.8em; cursor: pointer;
-  transition: all 0.15s; font-weight: 600;
-}
-.view-toggle .vt-btn:hover { border-color: var(--accent); }
-.view-toggle .vt-btn.active { border-color: var(--accent); background: var(--accent); color: #fff; }
-
-/* Verse selector grid */
-.vs-container { display: flex; gap: 14px; padding: 0 4px; }
+/* Verse view */
+.verse-view { padding: 14px; }
 .vs-grid {
   display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(40px,1fr));
   flex: 0 0 auto; width: 55%; max-height: 70vh; overflow-y: auto;

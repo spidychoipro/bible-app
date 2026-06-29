@@ -229,7 +229,7 @@
     if (currentView === 'chapter') { showBook(currentBook); }
     else if (currentView === 'book') { showHome(); }
     else if (currentView === 'search') { showHome(); }
-    else if (currentView === 'verse') { showChapter(currentBook, currentChapter); }
+    else if (currentView === 'verse') { showBook(currentBook); }
   }
 
   function setTitle(t) { title.textContent = t; }
@@ -306,48 +306,42 @@
         <span>총 ${book.chapters.length}장</span>
         <span>${total}절</span>
       </div>
-      <div class="chapter-jump">
-        <input type="number" id="jumpCh" min="1" max="${book.chapters.length}" placeholder="장">
-        <span>:</span>
-        <input type="number" id="jumpV" min="1" placeholder="절">
-        <button id="jumpBtn">이동</button>
-      </div>
       <div class="chapter-grid">${book.chapters.map((_,i)=>`<div class="chapter-item" data-ch="${i+1}">${i+1}장</div>`).join('')}</div>
+      <div id="verseGrid" style="display:none"></div>
     `;
 
-    const jumpCh = $('#jumpCh');
-    const jumpV = $('#jumpV');
-    const jumpBtn = $('#jumpBtn');
-    function doJump() {
-      const ch = parseInt(jumpCh.value);
-      const v = parseInt(jumpV.value);
-      if (ch >= 1 && ch <= book.chapters.length) {
-        if (v >= 1 && v <= book.chapters[ch-1].length) {
-          showChapter(koName, ch);
-          setTimeout(() => {
-            const target = content.querySelector(`[data-v="${v}"]`);
-            if (target) {
-              content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-              target.classList.add('selected');
-              if (typeof window.updateCopyBtn === 'function') window.updateCopyBtn();
-              target.scrollIntoView({block:'center', behavior:'smooth'});
-            }
-          }, 150);
-          jumpCh.value = ''; jumpV.value = '';
-        } else if (!jumpV.value) {
-          showChapter(koName, ch);
-          jumpCh.value = ''; jumpV.value = '';
-        }
-      }
-    }
-    jumpBtn.addEventListener('click', doJump);
-    jumpV.addEventListener('keydown', e => { if (e.key === 'Enter') doJump(); });
-    jumpCh.addEventListener('keydown', e => { if (e.key === 'Enter') jumpV.focus(); });
-
     content.querySelectorAll('.chapter-item').forEach(el => {
-      el.addEventListener('click', () => {
-        jumpCh.value = el.dataset.ch;
-        jumpV.focus();
+      el.addEventListener('click', () => showChapterVerses(koName, parseInt(el.dataset.ch)));
+    });
+  }
+
+  function showChapterVerses(koName, chNum) {
+    currentView = 'verse';
+    currentBook = koName; currentChapter = chNum;
+    setTitle(`${koName} ${chNum}장`);
+    showBack(true);
+    const book = findBook(koName);
+    if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">장을 찾을 수 없습니다</p>'; return; }
+    const verses = book.chapters[chNum-1];
+    content.innerHTML = `
+      <div class="info-bar">
+        <span>${koName} ${chNum}장</span>
+        <span>${verses.length}절</span>
+      </div>
+      <div class="vs-grid">${verses.map((_,i)=>`<button class="vs-item" data-v="${i+1}">${i+1}</button>`).join('')}</div>
+    `;
+    content.querySelectorAll('.vs-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showChapter(koName, chNum);
+        setTimeout(() => {
+          const target = content.querySelector(`[data-v="${btn.dataset.v}"]`);
+          if (target) {
+            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+            target.classList.add('selected');
+            if (typeof window.updateCopyBtn === 'function') window.updateCopyBtn();
+            target.scrollIntoView({block:'center', behavior:'smooth'});
+          }
+        }, 150);
       });
     });
   }
