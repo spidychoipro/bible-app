@@ -379,16 +379,29 @@
           return `<div class="verse-item" data-v="${vn}"><span class="vnum">${vn}</span><span class="vtext">${v}</span></div>`;
         }).join('')}
       </div>
-      <div class="quick-nav">
-        ${chNum>1?`<button id="prevCh">◀</button>`:''}
-        ${chNum<book.chapters.length?`<button id="nextCh">▶</button>`:''}
+        <div class="chapter-nav">
+          <button id="prevCh" class="${chNum > 1 ? '' : 'hidden'}">
+            <span class="arrow">←</span> <span>이전 장</span>
+          </button>
+          <button id="nextCh" class="${chNum < book.chapters.length ? '' : 'hidden'}">
+            <span>다음 장</span> <span class="arrow">→</span>
+          </button>
+        </div>
       </div>
     `;
 
     const prev = $('#prevCh');
     const next = $('#nextCh');
-    if (prev) prev.addEventListener('click', () => showChapter(koName, chNum-1));
-    if (next) next.addEventListener('click', () => showChapter(koName, chNum+1));
+    if (prev) {
+      prev.addEventListener('click', () => {
+        if (chNum > 1) showChapter(koName, chNum - 1);
+      });
+    }
+    if (next) {
+      next.addEventListener('click', () => {
+        if (chNum < book.chapters.length) showChapter(koName, chNum + 1);
+      });
+    }
 
     /* ─── Copy & deselect buttons ─── */
     let copyBtn = document.querySelector('.copy-btn');

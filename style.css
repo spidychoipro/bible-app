@@ -213,16 +213,13 @@ main {
 .chapter-item:hover { background: var(--accent); color: #fff; }
 
 /* Verse view */
-.verse-view { padding: 14px; padding-bottom: 140px; }
-@media (min-width: 600px) { .verse-view { padding: 20px 32px; padding-bottom: 140px; } }
-@media (min-width: 1024px) { .verse-view { padding: 24px 48px; padding-bottom: 140px; } }
+.verse-view { padding: 14px; padding-bottom: 40px; }
+@media (min-width: 600px) { .verse-view { padding: 20px 32px; padding-bottom: 48px; } }
+@media (min-width: 1024px) { .verse-view { padding: 24px 48px; padding-bottom: 56px; } }
 .verse-view .chapter-title {
   font-size: 1.2em; font-weight: 700; color: var(--accent);
   text-align: center; padding: 12px 0 8px;
 }
-
-/* Verse view */
-.verse-view { padding: 14px; }
 .vs-grid {
   display: grid; gap: 8px; padding: 14px;
   grid-template-columns: repeat(auto-fill, minmax(48px,1fr));
@@ -270,18 +267,43 @@ main {
   font-style: normal; padding: 0 2px; border-radius: 2px;
 }
 
-/* Quick nav */
-.quick-nav {
-  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-  display: flex; flex-direction: row; gap: 12px; z-index: 20;
+/* Chapter navigation */
+.chapter-nav {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 0;
+  width: 100%;
 }
-@media (min-width: 600px) { .quick-nav { bottom: 24px; gap: 16px; } }
-.quick-nav button {
-  width: 44px; height: 44px; border-radius: 50%; border: none;
-  background: var(--accent); color: #fff; font-size: 1.1em; cursor: pointer;
-  box-shadow: 0 2px 8px var(--shadow); transition: transform 0.1s;
+.chapter-nav button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px var(--shadow);
+  transition: all 0.2s ease, transform 0.1s ease;
 }
-.quick-nav button:active { transform: scale(0.9); }
+.chapter-nav button:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.chapter-nav button:active {
+  transform: scale(0.97);
+}
+.chapter-nav button.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
 
 /* Info bar */
 .info-bar {
