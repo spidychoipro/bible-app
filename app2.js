@@ -275,6 +275,7 @@
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
       clearTimeout(timeout);
+      loading.classList.add('hide');
       // 새로고침(reload) 시 해시를 비우고 홈 화면으로 이동 (Option 2)
       let isReload = false;
       try {
