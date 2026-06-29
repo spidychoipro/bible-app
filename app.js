@@ -412,33 +412,29 @@
 
     /* ─── Scroll to target verse ─── */
     if (targetVerse) {
-      // requestAnimationFrame 대신 setTimeout + scrollIntoView 조합이 더 안정적
       setTimeout(() => {
         const el = content.querySelector(`[data-v="${targetVerse}"]`);
+        const dbg = document.createElement('div');
+        dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999;background:#000;color:#0f0;font-size:14px;padding:10px;font-family:monospace';
+        dbg.textContent = 'targetVerse=' + targetVerse + ' el=' + (el ? 'FOUND' : 'NULL');
+        if (el) dbg.textContent += ' scrollH=' + content.scrollHeight + ' clientH=' + content.clientHeight + ' scrollTop=' + content.scrollTop + ' elTop=' + el.getBoundingClientRect().top;
+        document.body.appendChild(dbg);
         if (el) {
           content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
           el.classList.add('selected');
-
           if (typeof updateCopyBtn === 'function') updateCopyBtn();
-
-          // 주요 수정: scrollIntoView 사용
-          el.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-
-          // fallback (더 정확한 위치 조정)
+          el.style.outline = '3px solid red';
+          el.style.outlineOffset = '-2px';
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => {
             const rect = el.getBoundingClientRect();
             const containerRect = content.getBoundingClientRect();
             const offset = rect.top - containerRect.top + content.scrollTop - 80;
-            content.scrollTo({
-              top: offset,
-              behavior: 'smooth'
-            });
-          }, 100);
+            content.scrollTop = offset;
+            dbg.textContent += ' | after scroll: scrollTop=' + content.scrollTop + ' elTop=' + rect.top;
+          }, 200);
         }
-      }, 50);
+      }, 500);
     }
 
     /* ─── Swipe navigation ─── */
