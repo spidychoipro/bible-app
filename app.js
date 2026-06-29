@@ -323,8 +323,39 @@
         <span>총 ${book.chapters.length}장</span>
         <span>${total}절</span>
       </div>
+      <div class="chapter-jump">
+        <input type="number" id="jumpCh" min="1" max="${book.chapters.length}" placeholder="장">
+        <span>:</span>
+        <input type="number" id="jumpV" min="1" placeholder="절">
+        <button id="jumpBtn">이동</button>
+      </div>
       <div class="chapter-grid">${book.chapters.map((_,i)=>`<div class="chapter-item" data-ch="${i+1}">${i+1}장</div>`).join('')}</div>
     `;
+
+    const jumpCh = $('#jumpCh');
+    const jumpV = $('#jumpV');
+    const jumpBtn = $('#jumpBtn');
+    function doJump() {
+      const ch = parseInt(jumpCh.value);
+      const v = parseInt(jumpV.value);
+      if (ch >= 1 && ch <= book.chapters.length && v >= 1 && v <= book.chapters[ch-1].length) {
+        showChapter(koName, ch);
+        setTimeout(() => {
+          const target = content.querySelector(`[data-v="${v}"]`);
+          if (target) {
+            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+            target.classList.add('selected');
+            if (typeof window.updateCopyBtn === 'function') window.updateCopyBtn();
+            target.scrollIntoView({block:'center', behavior:'smooth'});
+          }
+        }, 150);
+        jumpCh.value = ''; jumpV.value = '';
+      }
+    }
+    jumpBtn.addEventListener('click', doJump);
+    jumpV.addEventListener('keydown', e => { if (e.key === 'Enter') doJump(); });
+    jumpCh.addEventListener('keydown', e => { if (e.key === 'Enter') jumpV.focus(); });
+
     content.querySelectorAll('.chapter-item').forEach(el => {
       el.addEventListener('click', () => showChapter(koName, parseInt(el.dataset.ch)));
     });

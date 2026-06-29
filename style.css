@@ -180,6 +180,23 @@ main {
 .book-item:hover { border-color: var(--accent); background: var(--hover); transform: translateY(-1px); }
 .book-item .badge { font-size: 0.75em; color: var(--accent); margin-top: 2px; }
 
+/* Chapter jump */
+.chapter-jump {
+  display: flex; gap: 6px; align-items: center; justify-content: center;
+  padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.chapter-jump input {
+  width: 56px; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.85em; text-align: center;
+  background: var(--bg); color: var(--text); outline: none;
+}
+.chapter-jump input:focus { border-color: var(--accent); }
+.chapter-jump span { font-size: 1em; font-weight: 700; color: var(--text-dim); }
+.chapter-jump button {
+  padding: 6px 14px; border: none; border-radius: 6px;
+  background: var(--accent); color: #fff; font-size: 0.85em; cursor: pointer;
+}
+
 /* Chapter grid */
 .chapter-grid {
   display: grid; gap: 8px; padding: 14px;
