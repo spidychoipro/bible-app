@@ -412,33 +412,14 @@
 
     /* ─── Scroll to target verse ─── */
     if (targetVerse) {
-      // DOM이 완전히 렌더링된 후에 스크롤 실행 (가장 중요한 부분)
       setTimeout(() => {
         const el = content.querySelector(`[data-v="${targetVerse}"]`);
         if (!el) return;
-
-        // 선택 상태 표시
         content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
         el.classList.add('selected');
         if (typeof updateCopyBtn === 'function') updateCopyBtn();
-
-        // 1차: scrollIntoView (가장 현대적이고 안정적)
-        el.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-
-        // 2차: fallback (위치 미세 조정)
-        setTimeout(() => {
-          const rect = el.getBoundingClientRect();
-          const containerRect = content.getBoundingClientRect();
-          const offset = rect.top - containerRect.top + content.scrollTop - 85;
-          content.scrollTo({
-            top: offset,
-            behavior: 'auto'
-          });
-        }, 180);
-      }, 60);
+        el.scrollIntoView(true);
+      }, 100);
     }
 
     /* ─── Swipe navigation ─── */
