@@ -352,7 +352,7 @@
     });
   }
 
-  function showChapter(koName, chNum, verseMode) {
+  function showChapter(koName, chNum) {
     currentView = 'chapter';
     currentBook = koName; currentChapter = chNum;
     setTitle(`${koName} ${chNum}장`);
@@ -362,112 +362,77 @@
     const verses = book.chapters[chNum-1];
     const query = new URLSearchParams(location.hash.slice(1)).get('v');
     const highlightVerse = query ? parseInt(query) : null;
-    const showVerseList = verseMode === true;
 
     content.innerHTML = `
       <div class="verse-view">
         <div class="chapter-title">${koName} ${chNum}장</div>
-        <div class="view-toggle">
-          <button class="vt-btn${!showVerseList?' active':''}" data-mode="chapter">📖 장 전체</button>
-          <button class="vt-btn${showVerseList?' active':''}" data-mode="verses">🔢 절 선택</button>
+        <div class="verse-jump">
+          <input type="number" id="verseJump" min="1" max="${verses.length}" placeholder="절 번호">
+          <button id="verseJumpBtn">이동</button>
         </div>
-        ${showVerseList ? `
-          <div class="vs-container">
-            <div class="vs-grid">
-              ${verses.map((_,i)=>{
-                const vn = i+1;
-                return `<button class="vs-item" data-v="${vn}">${vn}</button>`;
-              }).join('')}
-            </div>
-            <div class="vs-detail" id="vsDetail">
-              <div class="vs-ref" id="vsRef"></div>
-              <div class="vs-text" id="vsText">절을 선택하세요</div>
-              <button class="vs-copy-btn" id="vsCopyBtn" style="display:none">📋 복사</button>
-            </div>
-          </div>
-        ` : `
-          <div class="verse-jump">
-            <input type="number" id="verseJump" min="1" max="${verses.length}" placeholder="절 번호">
-            <button id="verseJumpBtn">이동</button>
-          </div>
-          ${verses.map((v,i)=>{
-            const vn = i+1;
-            return `<div class="verse-item${vn===highlightVerse?' highlight':''}" data-v="${vn}"><span class="vnum">${vn}</span><span class="vtext">${v}</span></div>`;
-          }).join('')}
-        `}
+        ${verses.map((v,i)=>{
+          const vn = i+1;
+          return `<div class="verse-item${vn===highlightVerse?' highlight':''}" data-v="${vn}"><span class="vnum">${vn}</span><span class="vtext">${v}</span></div>`;
+        }).join('')}
       </div>
       <div class="quick-nav">
         ${chNum>1?`<button id="prevCh">◀</button>`:''}
-        ${!showVerseList?`<button id="vsPickBtn" title="절 선택">🔢</button>`:''}
         ${chNum<book.chapters.length?`<button id="nextCh">▶</button>`:''}
       </div>
     `;
-
-    /* ─── View toggle ─── */
-    content.querySelectorAll('.vt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        showChapter(koName, chNum, btn.dataset.mode === 'verses');
-      });
-    });
 
     const prev = $('#prevCh');
     const next = $('#nextCh');
     if (prev) prev.addEventListener('click', () => showChapter(koName, chNum-1));
     if (next) next.addEventListener('click', () => showChapter(koName, chNum+1));
 
-    /* ─── Verse picker button (jumps to verse selector mode) ─── */
-    const vsPickBtn = $('#vsPickBtn');
-    if (vsPickBtn) {
-      vsPickBtn.addEventListener('click', () => showChapter(koName, chNum, true));
+    const vjInput = content.querySelector('.verse-jump input');
+    const vjBtn = content.querySelector('.verse-jump button');
+    if (vjInput && vjBtn) {
+      function jumpToVerse(vn) {
+        vn = parseInt(vn);
+        if (vn < 1 || vn > verses.length) return;
+        const target = content.querySelector(`[data-v="${vn}"]`);
+        if (target) {
+          content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+          target.classList.add('selected');
+          updateCopyBtn();
+          savePosition(koName, chNum, vn);
+          target.scrollIntoView({block:'center', behavior:'smooth'});
+          vjInput.value = '';
+        }
+      }
+      vjBtn.addEventListener('click', () => jumpToVerse(vjInput.value));
+      vjInput.addEventListener('keydown', e => { if (e.key === 'Enter') jumpToVerse(vjInput.value); });
     }
 
-    /* ─── Full chapter mode ─── */
-    if (!showVerseList) {
-      const vjInput = content.querySelector('.verse-jump input');
-      const vjBtn = content.querySelector('.verse-jump button');
-      if (vjInput && vjBtn) {
-        function jumpToVerse(vn) {
-          vn = parseInt(vn);
-          if (vn < 1 || vn > verses.length) return;
-          const target = content.querySelector(`[data-v="${vn}"]`);
-          if (target) {
-            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-            target.classList.add('selected');
-            updateCopyBtn();
-            savePosition(koName, chNum, vn);
-            target.scrollIntoView({block:'center', behavior:'smooth'});
-            vjInput.value = '';
-          }
-        }
-        vjBtn.addEventListener('click', () => jumpToVerse(vjInput.value));
-        vjInput.addEventListener('keydown', e => { if (e.key === 'Enter') jumpToVerse(vjInput.value); });
-      }
-
-      /* ─── Copy button (shared singleton) ─── */
-      let copyBtn = document.querySelector('.copy-btn');
-      if (!copyBtn) {
-        copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-btn';
-        copyBtn.textContent = '📋';
-        copyBtn.title = '선택한 절 복사';
-        document.body.appendChild(copyBtn);
-        copyBtn.addEventListener('click', () => {
-          const sel = content.querySelector('.verse-item.selected');
-          if (!sel) return;
-          const vn = sel.dataset.v;
-          const text = sel.querySelector('.vtext').textContent;
-          const ref = `${koName} ${chNum}:${vn}`;
-          navigator.clipboard.writeText(`${ref} ${text}`).then(() => {
-            showToast('복사되었습니다');
-          }).catch(() => {
-            showToast('복사 실패');
-          });
-        });
-      }
-      window.updateCopyBtn = function() {
+    /* ─── Copy button (shared singleton) ─── */
+    let copyBtn = document.querySelector('.copy-btn');
+    if (!copyBtn) {
+      copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-btn';
+      copyBtn.textContent = '📋';
+      copyBtn.title = '선택한 절 복사';
+      document.body.appendChild(copyBtn);
+      copyBtn.addEventListener('click', () => {
         const sel = content.querySelector('.verse-item.selected');
-        if (copyBtn) copyBtn.classList.toggle('show', !!sel);
-      };
+        if (!sel) return;
+        const vn = sel.dataset.v;
+        const text = sel.querySelector('.vtext').textContent;
+        const ref = `${koName} ${chNum}:${vn}`;
+        navigator.clipboard.writeText(`${ref} ${text}`).then(() => {
+          showToast('복사되었습니다');
+        }).catch(() => {
+          showToast('복사 실패');
+        });
+      });
+    }
+
+    updateCopyBtn = function() {
+      const sel = content.querySelector('.verse-item.selected');
+      const btn = document.querySelector('.copy-btn');
+      if (btn) btn.classList.toggle('show', !!sel);
+    };
 
       content.querySelectorAll('.verse-item').forEach(el => {
         el.addEventListener('click', () => {
