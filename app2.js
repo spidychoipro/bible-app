@@ -418,7 +418,8 @@
           content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
           el.classList.add('selected');
           if (typeof updateCopyBtn === 'function') updateCopyBtn();
-          el.scrollIntoView({block:'center', behavior:'smooth'});
+          const top = el.getBoundingClientRect().top - content.getBoundingClientRect().top;
+          content.scrollTop = content.scrollTop + top - 60;
         }
       });
     }
