@@ -412,29 +412,33 @@
 
     /* ─── Scroll to target verse ─── */
     if (targetVerse) {
+      // DOM이 완전히 렌더링된 후에 스크롤 실행 (가장 중요한 부분)
       setTimeout(() => {
         const el = content.querySelector(`[data-v="${targetVerse}"]`);
-        const dbg = document.createElement('div');
-        dbg.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999;background:#000;color:#0f0;font-size:14px;padding:10px;font-family:monospace';
-        dbg.textContent = 'targetVerse=' + targetVerse + ' el=' + (el ? 'FOUND' : 'NULL');
-        if (el) dbg.textContent += ' scrollH=' + content.scrollHeight + ' clientH=' + content.clientHeight + ' scrollTop=' + content.scrollTop + ' elTop=' + el.getBoundingClientRect().top;
-        document.body.appendChild(dbg);
-        if (el) {
-          content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
-          el.classList.add('selected');
-          if (typeof updateCopyBtn === 'function') updateCopyBtn();
-          el.style.outline = '3px solid red';
-          el.style.outlineOffset = '-2px';
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setTimeout(() => {
-            const rect = el.getBoundingClientRect();
-            const containerRect = content.getBoundingClientRect();
-            const offset = rect.top - containerRect.top + content.scrollTop - 80;
-            content.scrollTop = offset;
-            dbg.textContent += ' | after scroll: scrollTop=' + content.scrollTop + ' elTop=' + rect.top;
-          }, 200);
-        }
-      }, 500);
+        if (!el) return;
+
+        // 선택 상태 표시
+        content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        if (typeof updateCopyBtn === 'function') updateCopyBtn();
+
+        // 1차: scrollIntoView (가장 현대적이고 안정적)
+        el.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+
+        // 2차: fallback (위치 미세 조정)
+        setTimeout(() => {
+          const rect = el.getBoundingClientRect();
+          const containerRect = content.getBoundingClientRect();
+          const offset = rect.top - containerRect.top + content.scrollTop - 85;
+          content.scrollTo({
+            top: offset,
+            behavior: 'auto'
+          });
+        }, 180);
+      }, 60);
     }
 
     /* ─── Swipe navigation ─── */
