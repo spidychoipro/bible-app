@@ -30,8 +30,14 @@
 <div id="settingsOverlay"></div>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
   caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+  navigator.serviceWorker.register('sw.js').then(function(reg) {
+    if (reg.active && !navigator.serviceWorker.controller) return;
+    if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+  }).catch(function(){});
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    window.location.reload();
+  });
 }
 </script>
 <script src="app.js"></script>
