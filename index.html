@@ -29,13 +29,20 @@
 </div>
 <div id="settingsOverlay"></div>
 <script>
-// 방문할 때마다 캐시 + SW 정리 (한 번만)
+// 방문할 때마다 캐시 + SW 정리
 if ('caches' in self) { caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }).catch(function(){}); }
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(function(regs){
     Promise.all(regs.map(function(r){ return r.unregister(); }));
   }).catch(function(){});
 }
+// 5초 후에도 loading이 안 사라지면 오류 메시지 표시
+setTimeout(function(){
+  var el = document.getElementById('loading');
+  if (el && !el.classList.contains('hide')) {
+    el.innerHTML = '앱 로딩 실패<br><small>브라우저가 오래되었거나<br>인터넷 연결을 확인해주세요<br><br><a href="?reset='+Date.now()+'" style="color:#fff">다시 시도</a></small>';
+  }
+}, 8000);
 </script>
 <script src="app.js?v=2"></script>
 </body>

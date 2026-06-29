@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const DATA_URL = 'data/bible.json';
+  const DATA_URL = 'data/bible.json?v=2';
   let bible = [];
   let currentView = 'home';
   let currentTestament = 'ot';
@@ -235,6 +235,13 @@
   function setTitle(t) { title.textContent = t; }
   function showBack(v) { btnBack.style.visibility = v ? 'visible' : 'hidden'; }
 
+  /* 전역 오류 표시 */
+  window.onerror = function(msg, src, line, col, err) {
+    var el = document.getElementById('loading');
+    if (el) el.innerHTML = '오류 발생<br><small>' + msg + '<br>' + (src||'') + ':' + line + ':' + col + '</small>';
+    return true;
+  };
+
   async function init() {
     loading.textContent = '성경 데이터를 불러오는 중...';
     const ctrl = new AbortController();
@@ -248,7 +255,7 @@
       handleHash();
     } catch(e) {
       clearTimeout(timeout);
-      loading.innerHTML = '데이터를 불러오는데 실패했습니다<br><small>인터넷 연결을 확인하거나<br>페이지를 새로고침해주세요</small>';
+      loading.innerHTML = '데이터를 불러오는데 실패했습니다<br><small>' + e.message + '<br>인터넷 연결을 확인하거나 페이지를 새로고침해주세요</small>';
       console.error(e);
     }
   }

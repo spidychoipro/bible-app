@@ -19,8 +19,8 @@
     return Promise.all(regs.map(function(r) { return r.unregister(); }));
   }).then(function() {
     msg.textContent = '완료! 메인 페이지로 이동합니다...';
-    // 3. 메인으로 이동 (캐시 우회 파라미터)
-    setTimeout(function(){ window.location.href = '/bible-app/?reset=1'; }, 1000);
+    // 3. 메인으로 이동 (캐시 완전 우회)
+    setTimeout(function(){ window.location.href = '/bible-app/?reset=' + Date.now(); }, 1000);
   }).catch(function(e) {
     msg.textContent = '오류: ' + e.message;
   });
