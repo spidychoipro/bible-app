@@ -339,17 +339,7 @@
     `;
     content.querySelectorAll('.vs-item').forEach(btn => {
       btn.addEventListener('click', function() {
-        const v = parseInt(this.dataset.v);
-        showChapter(koName, chNum);
-        setTimeout(() => {
-          const el = content.querySelector(`[data-v="${v}"]`);
-          if (el) {
-            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-            el.classList.add('selected');
-            if (typeof updateCopyBtn === 'function') updateCopyBtn();
-            el.scrollIntoView({block:'nearest', behavior:'smooth'});
-          }
-        }, 0);
+        location.hash = `#book=${encodeURIComponent(koName)}&ch=${chNum}&v=${this.dataset.v}`;
       });
     });
   }
@@ -519,7 +509,7 @@
               content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
               el.classList.add('selected');
               if (typeof updateCopyBtn === 'function') updateCopyBtn();
-              el.scrollIntoView({block:'nearest', behavior:'smooth'});
+              el.scrollIntoView({block:'center', behavior:'smooth'});
             }
           }, 0);
         }
