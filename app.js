@@ -44,6 +44,36 @@
   const loading = $('#loading');
   const settingsOverlay = $('#settingsOverlay');
 
+  /* ─── Reading position ─── */
+  const POS_KEY = 'bibleLastPos';
+  function savePosition(book, ch, v) {
+    localStorage.setItem(POS_KEY, JSON.stringify({ book, ch, v }));
+  }
+  function loadPosition() {
+    try { return JSON.parse(localStorage.getItem(POS_KEY)); }
+    catch { return null; }
+  }
+
+  /* ─── Toast ─── */
+  let toastTimer;
+  function showToast(msg, duration) {
+    duration = duration || 2000;
+    let el = document.getElementById('toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+  }
+
+  /* ─── Touch swipe state ─── */
+  let touchStartX = 0;
+  let touchStartY = 0;
+
   /* ─── Theme & Font ─── */
   const THEME_KEY = 'bibleTheme';
   const FS_KEY = 'bibleFontSize';
@@ -216,6 +246,23 @@
       clearTimeout(timeout);
       loading.classList.add('hide');
       handleHash();
+      if (!location.hash) {
+        const pos = loadPosition();
+        if (pos && findBook(pos.book)) {
+          showChapter(pos.book, pos.ch);
+          if (pos.v) {
+            setTimeout(() => {
+              const el = content.querySelector(`[data-v="${pos.v}"]`);
+              if (el) {
+                el.classList.add('selected');
+                const cb = document.querySelector('.copy-btn');
+                if (cb) cb.classList.add('show');
+                el.scrollIntoView({block:'center', behavior:'smooth'});
+              }
+            }, 150);
+          }
+        }
+      }
     } catch(e) {
       clearTimeout(timeout);
       loading.innerHTML = '데이터를 불러오는데 실패했습니다<br><small>인터넷 연결을 확인하거나<br>페이지를 새로고침해주세요</small>';
@@ -311,11 +358,39 @@
     if (prev) prev.addEventListener('click', () => showChapter(koName, chNum-1));
     if (next) next.addEventListener('click', () => showChapter(koName, chNum+1));
 
+    /* ─── Copy button ─── */
+    let copyBtn = document.querySelector('.copy-btn');
+    if (!copyBtn) {
+      copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-btn';
+      copyBtn.textContent = '📋';
+      copyBtn.title = '선택한 절 복사';
+      document.body.appendChild(copyBtn);
+      copyBtn.addEventListener('click', () => {
+        const sel = content.querySelector('.verse-item.selected');
+        if (!sel) return;
+        const vn = sel.dataset.v;
+        const text = sel.querySelector('.vtext').textContent;
+        const ref = `${koName} ${chNum}:${vn}`;
+        navigator.clipboard.writeText(`${ref} ${text}`).then(() => {
+          showToast('복사되었습니다');
+        }).catch(() => {
+          showToast('복사 실패');
+        });
+      });
+    }
+    function updateCopyBtn() {
+      const sel = content.querySelector('.verse-item.selected');
+      copyBtn.classList.toggle('show', !!sel);
+    }
+
     content.querySelectorAll('.verse-item').forEach(el => {
       el.addEventListener('click', () => {
         content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
         el.classList.toggle('selected');
         history.replaceState(null, '', `#book=${encodeURIComponent(koName)}&ch=${chNum}&v=${el.dataset.v}`);
+        updateCopyBtn();
+        savePosition(koName, chNum, parseInt(el.dataset.v));
       });
     });
 
@@ -325,6 +400,26 @@
         if (el) el.scrollIntoView({block:'center', behavior:'smooth'});
       }, 100);
     }
+
+    /* ─── Swipe navigation ─── */
+    content.addEventListener('touchstart', e => {
+      const t = e.changedTouches[0];
+      touchStartX = t.screenX;
+      touchStartY = t.screenY;
+    }, { passive: true });
+    content.addEventListener('touchend', e => {
+      const t = e.changedTouches[0];
+      const dx = t.screenX - touchStartX;
+      const dy = t.screenY - touchStartY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        const book = findBook(koName);
+        if (dx < 0 && chNum < book.chapters.length) {
+          showChapter(koName, chNum + 1);
+        } else if (dx > 0 && chNum > 1) {
+          showChapter(koName, chNum - 1);
+        }
+      }
+    }, { passive: true });
   }
 
   function doSearch(query) {

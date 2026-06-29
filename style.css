@@ -316,3 +316,35 @@ main {
   width: 36px; height: 36px; padding: 0; border: 1px solid var(--border);
   border-radius: 6px; cursor: pointer; background: none;
 }
+
+/* Font family selector */
+.font-select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9em; background: var(--bg); color: var(--text); outline: none; cursor: pointer; }
+.font-select:focus { border-color: var(--accent); }
+
+/* Toast notification */
+#toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: var(--bg); padding: 10px 24px; border-radius: 8px;
+  font-size: 0.85em; z-index: 100; opacity: 0; pointer-events: none;
+  transition: all 0.3s; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Copy button */
+.copy-btn {
+  position: fixed; bottom: 80px; right: 16px; z-index: 20;
+  width: 48px; height: 48px; border-radius: 50%; border: none;
+  background: var(--accent); color: #fff; font-size: 1.1em; cursor: pointer;
+  box-shadow: 0 2px 12px var(--shadow); transition: transform 0.15s, opacity 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+}
+.copy-btn.show { opacity: 1; pointer-events: auto; }
+.copy-btn:active { transform: scale(0.9); }
+
+/* Progress dot on chapter items */
+.chapter-item.has-read { position: relative; }
+.chapter-item.has-read::after {
+  content: ''; position: absolute; top: 4px; right: 4px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+}
