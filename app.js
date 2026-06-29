@@ -220,6 +220,21 @@
   searchClose.addEventListener('click', () => { searchBar.style.display='none'; searchInput.value=''; });
   searchInput.addEventListener('keydown', e => { if (e.key==='Enter') doSearch(searchInput.value); });
 
+  document.addEventListener('keydown', e => {
+    if (currentView !== 'chapter') return;
+    if (settingsOverlay.classList.contains('open')) return;
+    if (document.activeElement === searchInput) return;
+    const book = findBook(currentBook);
+    if (!book) return;
+    if (e.key === 'ArrowLeft' && currentChapter > 1) {
+      e.preventDefault();
+      showChapter(currentBook, currentChapter - 1);
+    } else if (e.key === 'ArrowRight' && currentChapter < book.chapters.length) {
+      e.preventDefault();
+      showChapter(currentBook, currentChapter + 1);
+    }
+  });
+
   function toggleSearch() {
     if (searchBar.style.display === 'flex') { searchBar.style.display='none'; return; }
     searchBar.style.display='flex'; searchInput.focus();
