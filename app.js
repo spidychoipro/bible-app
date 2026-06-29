@@ -444,40 +444,6 @@
           if (el) el.scrollIntoView({block:'center', behavior:'smooth'});
         }, 100);
       }
-    }
-
-    /* ─── Verse selector mode ─── */
-    if (showVerseList) {
-      const vsDetail = $('#vsDetail');
-      const vsRef = $('#vsRef');
-      const vsText = $('#vsText');
-      const vsCopyBtn = $('#vsCopyBtn');
-      if (!vsDetail) return;
-
-      content.querySelectorAll('.vs-item').forEach(btn => {
-        btn.addEventListener('click', () => {
-          content.querySelectorAll('.vs-item.selected').forEach(x=>x.classList.remove('selected'));
-          btn.classList.add('selected');
-          const vn = parseInt(btn.dataset.v);
-          const text = verses[vn-1];
-          vsRef.textContent = `${koName} ${chNum}:${vn}`;
-          vsText.textContent = text;
-          vsCopyBtn.style.display = '';
-          vsCopyBtn.onclick = () => {
-            navigator.clipboard.writeText(`${koName} ${chNum}:${vn} ${text}`).then(() => {
-              showToast('복사되었습니다');
-            });
-          };
-          savePosition(koName, chNum, vn);
-        });
-      });
-
-      // Auto-select if coming from deep link
-      if (highlightVerse) {
-        const target = content.querySelector(`.vs-item[data-v="${highlightVerse}"]`);
-        if (target) target.click();
-      }
-    }
 
     /* ─── Swipe navigation ─── */
     content.addEventListener('touchstart', e => {
