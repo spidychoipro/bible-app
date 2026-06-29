@@ -221,9 +221,18 @@
   searchInput.addEventListener('keydown', e => { if (e.key==='Enter') doSearch(searchInput.value); });
 
   document.addEventListener('keydown', e => {
-    if (currentView !== 'chapter') return;
     if (settingsOverlay.classList.contains('open')) return;
     if (document.activeElement === searchInput) return;
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      content.scrollBy({ top: -80, behavior: 'smooth' });
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      content.scrollBy({ top: 80, behavior: 'smooth' });
+    }
+
+    if (currentView !== 'chapter') return;
     const book = findBook(currentBook);
     if (!book) return;
     if (e.key === 'ArrowLeft' && currentChapter > 1) {
