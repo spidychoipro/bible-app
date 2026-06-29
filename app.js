@@ -343,6 +343,10 @@
     content.innerHTML = `
       <div class="verse-view">
         <div class="chapter-title">${koName} ${chNum}장</div>
+        <div class="verse-jump">
+          <input type="number" id="verseJump" min="1" max="${verses.length}" placeholder="절">
+          <button id="verseJumpBtn">이동</button>
+        </div>
         ${verses.map((v,i)=>{
           const vn = i+1;
           return `<div class="verse-item${vn===highlightVerse?' highlight':''}" data-v="${vn}"><span class="vnum">${vn}</span><span class="vtext">${v}</span></div>`;
@@ -357,6 +361,25 @@
     const next = $('#nextCh');
     if (prev) prev.addEventListener('click', () => showChapter(koName, chNum-1));
     if (next) next.addEventListener('click', () => showChapter(koName, chNum+1));
+
+    /* ─── Verse jump ─── */
+    const vjInput = $('#verseJump');
+    const vjBtn = $('#verseJumpBtn');
+    function jumpToVerse(vn) {
+      vn = parseInt(vn);
+      if (vn < 1 || vn > verses.length) return;
+      const target = content.querySelector(`[data-v="${vn}"]`);
+      if (target) {
+        content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+        target.classList.add('selected');
+        updateCopyBtn();
+        savePosition(koName, chNum, vn);
+        target.scrollIntoView({block:'center', behavior:'smooth'});
+        vjInput.value = '';
+      }
+    }
+    vjBtn.addEventListener('click', () => jumpToVerse(vjInput.value));
+    vjInput.addEventListener('keydown', e => { if (e.key === 'Enter') jumpToVerse(vjInput.value); });
 
     /* ─── Copy button ─── */
     let copyBtn = document.querySelector('.copy-btn');

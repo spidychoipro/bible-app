@@ -201,7 +201,20 @@ main {
 @media (min-width: 1024px) { .verse-view { padding: 24px 48px; } }
 .verse-view .chapter-title {
   font-size: 1.2em; font-weight: 700; color: var(--accent);
-  text-align: center; padding: 12px 0 18px;
+  text-align: center; padding: 12px 0 8px;
+}
+.verse-view .verse-jump {
+  display: flex; gap: 6px; justify-content: center; margin-bottom: 14px;
+}
+.verse-view .verse-jump input {
+  width: 70px; padding: 6px 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 0.85em; text-align: center;
+  background: var(--surface); color: var(--text); outline: none;
+}
+.verse-view .verse-jump input:focus { border-color: var(--accent); }
+.verse-view .verse-jump button {
+  padding: 6px 14px; border: none; border-radius: 6px;
+  background: var(--accent); color: #fff; font-size: 0.85em; cursor: pointer;
 }
 .verse-item {
   padding: 6px 12px; border-radius: 6px; margin-bottom: 2px;
