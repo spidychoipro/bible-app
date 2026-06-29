@@ -419,8 +419,9 @@
         el.classList.add('selected');
         if (typeof updateCopyBtn === 'function') updateCopyBtn();
         const main = document.querySelector('main');
-        const offset = el.offsetTop - main.offsetTop - 60;
-        main.scrollTop = offset;
+        const elRect = el.getBoundingClientRect();
+        const mainRect = main.getBoundingClientRect();
+        main.scrollTop += elRect.top - mainRect.top - 60;
       }, 100);
     }
 
