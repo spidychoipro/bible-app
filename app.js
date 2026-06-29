@@ -387,8 +387,9 @@
     if (prev) prev.addEventListener('click', () => showChapter(koName, chNum-1));
     if (next) next.addEventListener('click', () => showChapter(koName, chNum+1));
 
-    /* ─── Copy button (shared singleton) ─── */
+    /* ─── Action buttons (copy + deselect) ─── */
     let copyBtn = document.querySelector('.copy-btn');
+    let deselectBtn = document.querySelector('.deselect-btn');
     if (!copyBtn) {
       copyBtn = document.createElement('button');
       copyBtn.className = 'copy-btn';
@@ -408,11 +409,23 @@
         });
       });
     }
+    if (!deselectBtn) {
+      deselectBtn = document.createElement('button');
+      deselectBtn.className = 'deselect-btn';
+      deselectBtn.textContent = '선택 안함';
+      document.body.appendChild(deselectBtn);
+      deselectBtn.addEventListener('click', () => {
+        content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
+        updateCopyBtn();
+      });
+    }
 
     let updateCopyBtn = function() {
       const sel = content.querySelector('.verse-item.selected');
-      const btn = document.querySelector('.copy-btn');
-      if (btn) btn.classList.toggle('show', !!sel);
+      const copy = document.querySelector('.copy-btn');
+      const deselect = document.querySelector('.deselect-btn');
+      if (copy) copy.classList.toggle('show', !!sel);
+      if (deselect) deselect.classList.toggle('show', !!sel);
     };
 
       content.querySelectorAll('.verse-item').forEach(el => {

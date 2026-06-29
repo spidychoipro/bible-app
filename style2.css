@@ -272,9 +272,10 @@ main {
 
 /* Quick nav */
 .quick-nav {
-  position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 20;
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: row; gap: 12px; z-index: 20;
 }
-@media (min-width: 600px) { .quick-nav { bottom: 24px; right: 24px; gap: 8px; } }
+@media (min-width: 600px) { .quick-nav { bottom: 24px; gap: 16px; } }
 .quick-nav button {
   width: 44px; height: 44px; border-radius: 50%; border: none;
   background: var(--accent); color: #fff; font-size: 1.1em; cursor: pointer;
@@ -375,6 +376,16 @@ main {
 }
 .copy-btn.show { opacity: 1; pointer-events: auto; }
 .copy-btn:active { transform: scale(0.9); }
+
+/* Deselect button */
+.deselect-btn {
+  position: fixed; bottom: 96px; right: 16px; z-index: 20;
+  background: none; border: none; color: var(--accent);
+  font-size: 0.8em; cursor: pointer; padding: 4px 8px;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.deselect-btn.show { opacity: 1; pointer-events: auto; }
+.deselect-btn:hover { text-decoration: underline; }
 
 /* Progress dot on chapter items */
 .chapter-item.has-read { position: relative; }
