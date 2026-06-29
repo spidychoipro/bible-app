@@ -412,29 +412,33 @@
 
     /* ─── Scroll to target verse ─── */
     if (targetVerse) {
-      requestAnimationFrame(() => {
+      // requestAnimationFrame 대신 setTimeout + scrollIntoView 조합이 더 안정적
+      setTimeout(() => {
         const el = content.querySelector(`[data-v="${targetVerse}"]`);
-        const dbg = document.getElementById('loading');
-        if (dbg) {
-          dbg.classList.remove('hide');
-          dbg.style.background = 'rgba(0,0,0,0.85)';
-          dbg.style.color = '#ff0';
-          dbg.style.fontSize = '16px';
-          dbg.style.padding = '30px';
-          dbg.style.alignItems = 'flex-start';
-          dbg.style.justifyContent = 'flex-start';
-          dbg.style.pointerEvents = 'auto';
-          dbg.style.opacity = '1';
-          dbg.innerHTML = '<b>DEBUG:</b><br>targetVerse=' + targetVerse + '<br>el=' + (el ? el.tagName + '[data-v=' + el.dataset.v + ']' : 'null') + '<br>verses in DOM: ' + content.querySelectorAll('.verse-item').length;
-        }
         if (el) {
-          content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+          content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
           el.classList.add('selected');
+
           if (typeof updateCopyBtn === 'function') updateCopyBtn();
-          const top = el.getBoundingClientRect().top - content.getBoundingClientRect().top;
-          content.scrollTop = content.scrollTop + top - 60;
+
+          // 주요 수정: scrollIntoView 사용
+          el.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+
+          // fallback (더 정확한 위치 조정)
+          setTimeout(() => {
+            const rect = el.getBoundingClientRect();
+            const containerRect = content.getBoundingClientRect();
+            const offset = rect.top - containerRect.top + content.scrollTop - 80;
+            content.scrollTo({
+              top: offset,
+              behavior: 'smooth'
+            });
+          }, 100);
         }
-      });
+      }, 50);
     }
 
     /* ─── Swipe navigation ─── */
