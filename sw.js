@@ -1,4 +1,4 @@
-const CACHE = 'bible-v8';
+const CACHE = 'bible-v9';
 const URLS = ['index.html','style.css','app.js','manifest.json','data/bible.json'];
 
 self.addEventListener('install', e => {
@@ -16,6 +16,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => cached))
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).catch(() => {
+        if (e.request.mode === 'navigate') return caches.match('index.html');
+        return new Response('', { status: 503 });
+      });
+    })
   );
 });
