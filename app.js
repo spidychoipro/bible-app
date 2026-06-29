@@ -206,13 +206,19 @@
   function showBack(v) { btnBack.style.visibility = v ? 'visible' : 'hidden'; }
 
   async function init() {
+    loading.textContent = '성경 데이터를 불러오는 중...';
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const resp = await fetch(DATA_URL);
+      const resp = await fetch(DATA_URL, { signal: ctrl.signal });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
+      clearTimeout(timeout);
       loading.classList.add('hide');
       handleHash();
     } catch(e) {
-      loading.textContent = '데이터를 불러오는데 실패했습니다';
+      clearTimeout(timeout);
+      loading.innerHTML = '데이터를 불러오는데 실패했습니다<br><small>인터넷 연결을 확인하거나<br>페이지를 새로고침해주세요</small>';
       console.error(e);
     }
   }
