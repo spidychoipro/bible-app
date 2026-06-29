@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><title>캐시 초기화 중...</title>
+<style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#1a1a2e;color:#fff;font-size:18px}</style>
+</head>
+<body><div id="msg">캐시 초기화 중...</div>
+<script>
+(function(){
+  var msg = document.getElementById('msg');
+  msg.textContent = '캐시 삭제 중...';
+  // 1. 모든 캐시 삭제
+  caches.keys().then(function(keys) {
+    return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+  }).then(function() {
+    msg.textContent = '서비스워커 해제 중...';
+    // 2. 모든 SW 등록 해제
+    return navigator.serviceWorker.getRegistrations();
+  }).then(function(regs) {
+    return Promise.all(regs.map(function(r) { return r.unregister(); }));
+  }).then(function() {
+    msg.textContent = '완료! 메인 페이지로 이동합니다...';
+    // 3. 메인으로 이동
+    setTimeout(function(){ window.location.href = '/bible-app/'; }, 1000);
+  }).catch(function(e) {
+    msg.textContent = '오류: ' + e.message;
+  });
+})();
+</script>
+</body>
+</html>

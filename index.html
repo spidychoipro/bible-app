@@ -28,21 +28,6 @@
   <div id="loading">불러오는 중...</div>
 </div>
 <div id="settingsOverlay"></div>
-<script>
-if ('serviceWorker' in navigator) {
-  // 1. 캐시 삭제
-  caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); });
-  // 2. updateViaCache:none 으로 SW 강제 갱신 (HTTP 캐시 우회, sw.js 바이트 비교)
-  navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).catch(function(){});
-  // 3. SW 교체되면 자동 새로고침
-  var refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', function(){
-    if (refreshing) return;
-    refreshing = true;
-    location.reload();
-  });
-}
-</script>
 <script src="app.js"></script>
 </body>
 </html>
