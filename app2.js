@@ -415,8 +415,7 @@
       deselectBtn.textContent = '선택 안함';
       document.body.appendChild(deselectBtn);
       deselectBtn.addEventListener('click', () => {
-        content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
-        updateCopyBtn();
+        showChapter(currentBook, currentChapter);
       });
     }
 

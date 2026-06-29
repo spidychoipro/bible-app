@@ -213,9 +213,9 @@ main {
 .chapter-item:hover { background: var(--accent); color: #fff; }
 
 /* Verse view */
-.verse-view { padding: 14px; }
-@media (min-width: 600px) { .verse-view { padding: 20px 32px; } }
-@media (min-width: 1024px) { .verse-view { padding: 24px 48px; } }
+.verse-view { padding: 14px; padding-bottom: 140px; }
+@media (min-width: 600px) { .verse-view { padding: 20px 32px; padding-bottom: 140px; } }
+@media (min-width: 1024px) { .verse-view { padding: 24px 48px; padding-bottom: 140px; } }
 .verse-view .chapter-title {
   font-size: 1.2em; font-weight: 700; color: var(--accent);
   text-align: center; padding: 12px 0 8px;
@@ -379,9 +379,10 @@ main {
 
 /* Deselect button */
 .deselect-btn {
-  position: fixed; bottom: 96px; right: 16px; z-index: 20;
-  background: none; border: none; color: var(--accent);
-  font-size: 0.8em; cursor: pointer; padding: 4px 8px;
+  position: fixed; bottom: 76px; right: 16px; z-index: 20;
+  background: var(--surface); border: 1px solid var(--border); color: var(--accent);
+  font-size: 0.8em; cursor: pointer; padding: 6px 12px; border-radius: 16px;
+  box-shadow: 0 2px 8px var(--shadow);
   opacity: 0; pointer-events: none; transition: opacity 0.2s;
 }
 .deselect-btn.show { opacity: 1; pointer-events: auto; }
