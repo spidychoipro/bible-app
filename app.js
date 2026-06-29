@@ -394,7 +394,7 @@
       });
     }
 
-    updateCopyBtn = function() {
+    let updateCopyBtn = function() {
       const sel = content.querySelector('.verse-item.selected');
       const btn = document.querySelector('.copy-btn');
       if (btn) btn.classList.toggle('show', !!sel);
@@ -414,15 +414,43 @@
     if (targetVerse) {
       setTimeout(() => {
         const el = content.querySelector(`[data-v="${targetVerse}"]`);
-        if (!el) return;
+        if (!el) {
+          console.warn(`Target verse element data-v="${targetVerse}" not found.`);
+          return;
+        }
         content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
         el.classList.add('selected');
-        if (typeof updateCopyBtn === 'function') updateCopyBtn();
-        const main = document.querySelector('main');
+        updateCopyBtn();
+        
+        // 디버깅을 위한 콘솔 로그 추가
+        const contentRect = content.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
-        const mainRect = main.getBoundingClientRect();
-        main.scrollTop += elRect.top - mainRect.top - 60;
-      }, 100);
+        const calculatedScrollTop = elRect.top - contentRect.top + content.scrollTop - 20;
+        
+        console.log('[BibleApp Debug]', {
+          targetVerse,
+          contentScrollTopBefore: content.scrollTop,
+          contentRectTop: contentRect.top,
+          elRectTop: elRect.top,
+          calculatedScrollTop,
+          windowScrollY: window.scrollY
+        });
+        
+        // 방법 1: content.scrollTop 직접 대입
+        content.scrollTop = calculatedScrollTop;
+        
+        // 방법 2: content.scrollTo 실행
+        if (typeof content.scrollTo === 'function') {
+          content.scrollTo({ top: calculatedScrollTop, behavior: 'auto' });
+        }
+        
+        // 방법 3: 만약 window/body가 스크롤되는 환경일 경우를 대비해 window.scrollTo 실행
+        const bodyRect = document.body.getBoundingClientRect();
+        const winScrollTop = window.scrollY + elRect.top - 60; // 60px 헤더 여유
+        window.scrollTo({ top: winScrollTop, behavior: 'auto' });
+        
+        console.log('[BibleApp Debug] contentScrollTopAfter:', content.scrollTop);
+      }, 300);
     }
 
     /* ─── Swipe navigation ─── */
