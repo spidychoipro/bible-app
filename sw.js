@@ -1,4 +1,4 @@
-const CACHE = 'bible-v5';
+const CACHE = 'bible-v6';
 const URLS = ['index.html','style.css','app.js','manifest.json','data/bible.json'];
 
 self.addEventListener('install', e => {
