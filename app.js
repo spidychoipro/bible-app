@@ -510,7 +510,7 @@
   };
 
   async function loadBibleData(transId) {
-    const CACHE_VER = 'v9';
+    const CACHE_VER = 'v10';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -529,7 +529,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=9';
+      const url = 'data/bible-' + transId + '.json?v=10';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
@@ -550,7 +550,7 @@
 
 
   async function loadCompareData(transId) {
-    const CACHE_VER = 'v9';
+    const CACHE_VER = 'v10';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -566,7 +566,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=9';
+      const url = 'data/bible-' + transId + '.json?v=10';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       compareBible = await resp.json();
@@ -1059,11 +1059,11 @@
           picker.id = 'hlPicker';
           picker.className = 'hl-picker';
           picker.innerHTML = `
-            <button class="hl-pick yellow" data-c="yellow"></button>
-            <button class="hl-pick green" data-c="green"></button>
-            <button class="hl-pick blue" data-c="blue"></button>
-            <button class="hl-pick pink" data-c="pink"></button>
-            <button class="hl-pick remove" data-c="">✕</button>
+            <button class="hl-pick yellow" data-c="yellow" title="노랑" aria-label="노랑 하이라이트"></button>
+            <button class="hl-pick green" data-c="green" title="초록" aria-label="초록 하이라이트"></button>
+            <button class="hl-pick blue" data-c="blue" title="파랑" aria-label="파랑 하이라이트"></button>
+            <button class="hl-pick pink" data-c="pink" title="분홍" aria-label="분홍 하이라이트"></button>
+            <button class="hl-pick remove" data-c="" title="하이라이트 제거" aria-label="하이라이트 제거">✕</button>
           `;
           document.body.appendChild(picker);
           picker.querySelectorAll('.hl-pick').forEach(btn => {
