@@ -435,11 +435,15 @@
     const btn = e.target.closest('.tab-btn');
     if (!btn) return;
     const tab = btn.dataset.tab;
+    if (settingsOverlay.classList.contains('open')) closeSettings();
     setActiveTab(tab);
     if (tab === 'home') showHome();
     else if (tab === 'search') showSearchView();
     else if (tab === 'mystuff') showMyStuff();
-    else if (tab === 'settings') openSettings();
+    else if (tab === 'settings') {
+      if (settingsOverlay.classList.contains('open')) closeSettings();
+      else openSettings();
+    }
   });
 
   document.addEventListener('keydown', e => {
