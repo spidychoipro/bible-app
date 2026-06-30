@@ -100,6 +100,14 @@
   const loading = $('#loading');
   const settingsOverlay = $('#settingsOverlay');
   const tabBar = $('#tabBar');
+  const offlineBanner = document.getElementById('offlineBanner');
+
+  function renderContent(html) {
+    content.classList.remove('view-fade');
+    content.innerHTML = html;
+    void content.offsetHeight;
+    content.classList.add('view-fade');
+  }
 
   /* ─── Reading position ─── */
   const POS_KEY = 'bibleLastPos';
@@ -437,13 +445,13 @@
     setActiveTab('search');
     setTitle(txt('searchTitle'));
     showBack(true);
-    content.innerHTML = `
+    renderContent(`
       <div class="search-view">
         <div class="sv-bar">
           <input type="text" class="sv-input" id="svInput" placeholder="${currentLang === 'ko' ? '검색어 입력...' : 'Search...'}" autocomplete="off">
         </div>
         <div id="svResults"></div>
-      </div>`;
+      </div>`);
     const input = document.getElementById('svInput');
     input.focus();
     input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(input.value); });
@@ -468,6 +476,19 @@
   };
 
   async function loadBibleData(transId) {
+    const CACHE_VER = 'v2';
+    const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        bible = JSON.parse(cached);
+        currentTranslation = transId;
+        currentLang = TRANSLATIONS.find(t => t.id === transId)?.lang || 'ko';
+        localStorage.setItem(TRANS_KEY, transId);
+        updateOnlineStatus();
+        return true;
+      } catch (e) { sessionStorage.removeItem(cacheKey); }
+    }
     loading.classList.remove('hide');
     loading.textContent = txt('loading');
     const ctrl = new AbortController();
@@ -477,6 +498,7 @@
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(bible)); } catch (e) {}
       currentTranslation = transId;
       currentLang = TRANSLATIONS.find(t => t.id === transId)?.lang || 'ko';
       localStorage.setItem(TRANS_KEY, transId);
@@ -490,6 +512,16 @@
       return false;
     }
   }
+
+  /* ─── Online/Offline detection ─── */
+  const OFFLINE_MSGS = { ko: '인터넷 연결이 끊어졌습니다', en: 'You are offline' };
+  function updateOnlineStatus() {
+    offlineBanner.textContent = OFFLINE_MSGS[currentLang] || OFFLINE_MSGS.en;
+    offlineBanner.classList.toggle('show', !navigator.onLine);
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
 
   async function init() {
     const ok = await loadBibleData(currentTranslation);
@@ -522,7 +554,7 @@
     showBack(false);
     const curTrans = TRANSLATIONS.find(t => t.id === currentTranslation);
     const dv = getDailyVerse();
-    content.innerHTML = `
+    renderContent(`
       ${dv ? `
       <div class="home-card">
         <div class="cv-card" id="dailyVerse" data-book="${dv.enName}" data-ch="${dv.ch}" data-v="${dv.v}">
@@ -546,7 +578,7 @@
         <button data-t="nt">${currentLang === 'ko' ? '신약' : 'NT'}</button>
       </div>
       <div class="book-list" id="bookList"></div>
-    `;
+    `);
     document.getElementById('transBar').addEventListener('click', showTranslationPicker);
     const dvEl = document.getElementById('dailyVerse');
     if (dvEl) {
@@ -685,16 +717,16 @@
     setTitle(name);
     showBack(true);
     const book = findBook(name);
-    if (!book) { content.innerHTML='<p style="padding:16px">데이터를 찾을 수 없습니다</p>'; return; }
+    if (!book) { renderContent('<p style="padding:16px">데이터를 찾을 수 없습니다</p>'); return; }
     const total = book.chapters.reduce((a,c)=>a+c.length,0);
-    content.innerHTML = `
+    renderContent(`
       <div class="info-bar">
         <span>${book.chapters.length} ${txt('chapters')}</span>
         <span>${total} ${txt('verses')}</span>
       </div>
       <div class="chapter-grid">${book.chapters.map((_,i)=>`<div class="chapter-item" data-ch="${i+1}">${i+1}${txt('chapter')}</div>`).join('')}</div>
       <div id="verseGrid" style="display:none"></div>
-    `;
+    `);
 
     content.querySelectorAll('.chapter-item').forEach(el => {
       el.addEventListener('click', () => showChapterVerses(name, parseInt(el.dataset.ch)));
@@ -707,16 +739,16 @@
     setTitle(name + ' ' + chNum + txt('chapter'));
     showBack(true);
     const book = findBook(name);
-    if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">데이터를 찾을 수 없습니다</p>'; return; }
+    if (!book || !book.chapters[chNum-1]) { renderContent('<p style="padding:16px">데이터를 찾을 수 없습니다</p>'); return; }
     const verses = book.chapters[chNum-1];
-    content.innerHTML = `
+    renderContent(`
       <div class="info-bar">
         <span>${name} ${chNum}${txt('chapter')}</span>
         <span>${verses.length} ${txt('verses')}</span>
       </div>
       <div class="vs-grid">${verses.map((_,i)=>`<button class="vs-item" data-v="${i+1}">${i+1}</button>`).join('')}</div>
       <button class="deselect-btn" id="deselectVerse">${currentLang === 'ko' ? '선택 안함' : 'Deselect'}</button>
-    `;
+    `);
     content.querySelectorAll('.vs-item').forEach(btn => {
       btn.addEventListener('click', function() {
         showChapter(name, chNum, parseInt(this.dataset.v));
@@ -732,10 +764,10 @@
     setTitle(name + ' ' + chNum + txt('chapter'));
     showBack(true);
     const book = findBook(name);
-    if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">데이터를 찾을 수 없습니다</p>'; return; }
+    if (!book || !book.chapters[chNum-1]) { renderContent('<p style="padding:16px">데이터를 찾을 수 없습니다</p>'); return; }
     const verses = book.chapters[chNum-1];
 
-    content.innerHTML = `
+    renderContent(`
       <div class="verse-view">
         <div class="chapter-title">${name} ${chNum}${txt('chapter')}</div>
         ${verses.map((v,i)=>{
@@ -758,7 +790,7 @@
           </button>
         </div>
       </div>
-    `;
+    `);
 
     // Reset scroll position to top
     content.scrollTop = 0;
@@ -806,7 +838,18 @@
         const text = sel.querySelector('.vtext').textContent;
         const added = toggleBookmark(book, ch, v, text);
         showToast(added ? '북마크에 추가됨' : '북마크에서 제거됨');
-        showChapter(currentBook, currentChapter, parseInt(sel.dataset.v));
+        const ind = sel.querySelector('.bm-indicator');
+        if (added) {
+          if (!ind) {
+            const s = document.createElement('span');
+            s.className = 'bm-indicator';
+            s.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><use href="#i-bookmark"/></svg>';
+            sel.appendChild(s);
+          }
+        } else { if (ind) ind.remove(); }
+        const bmkBtn = document.getElementById('actBookmark');
+        bmkBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-bookmark${added ? '' : '-outline'}"/></svg> ${currentLang === 'ko' ? '북마크' : 'Bookmark'}`;
+        savePosition(book, ch, v);
       });
 
       document.getElementById('actHighlight').addEventListener('click', () => {
@@ -838,7 +881,12 @@
               setHighlight(b, cc, vv, c || null);
               picker.classList.remove('show');
               showToast(c ? '하이라이트 적용됨' : '하이라이트 제거됨');
-              showChapter(currentBook, currentChapter, vv);
+              const sel = content.querySelector(`.verse-item[data-v="${vv}"]`);
+              if (sel) {
+                sel.className = sel.className.replace(/\bhl-\w+\b/g, '').trim();
+                if (c) sel.classList.add('hl-' + c);
+                document.getElementById('actHighlight').style.opacity = c ? '1' : '0.5';
+              }
             });
           });
         }
@@ -1046,7 +1094,8 @@
         const parts = ref.split('|');
         if (parts.length === 3) {
           const b = parts[0], c = parseInt(parts[1]), vv = parseInt(parts[2]);
-          if (ta.value.trim()) {
+          const hasNote = ta.value.trim() ? true : false;
+          if (hasNote) {
             setNote(b, c, vv, ta.value.trim());
             showToast('메모가 저장됨');
           } else {
@@ -1054,17 +1103,35 @@
             showToast('메모가 제거됨');
           }
           overlay.classList.remove('open');
-          showChapter(currentBook, currentChapter, currentChapter ? parseInt(overlay.querySelector('.ref').textContent.split(':')[1]) : undefined);
+          const sel = content.querySelector(`.verse-item[data-v="${vv}"]`);
+          if (sel) {
+            const ind = sel.querySelector('.nt-indicator');
+            if (hasNote) {
+              if (!ind) {
+                const s = document.createElement('span');
+                s.className = 'nt-indicator';
+                s.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><use href="#i-note"/></svg>';
+                sel.appendChild(s);
+              }
+            } else { if (ind) ind.remove(); }
+            document.getElementById('actNote').style.opacity = hasNote ? '1' : '0.5';
+          }
         }
       });
       document.getElementById('noteDelete').addEventListener('click', () => {
         const ref = overlay.dataset.ref || '';
         const parts = ref.split('|');
         if (parts.length === 3) {
-          setNote(parts[0], parseInt(parts[1]), parseInt(parts[2]), '');
+          const vv = parseInt(parts[2]);
+          setNote(parts[0], parseInt(parts[1]), vv, '');
           showToast('메모가 삭제됨');
           overlay.classList.remove('open');
-          showChapter(currentBook, currentChapter, parseInt(parts[2]));
+          const sel = content.querySelector(`.verse-item[data-v="${vv}"]`);
+          if (sel) {
+            const ind = sel.querySelector('.nt-indicator');
+            if (ind) ind.remove();
+            document.getElementById('actNote').style.opacity = '0.5';
+          }
         }
       });
     }
@@ -1083,14 +1150,14 @@
     setActiveTab('mystuff');
     setTitle(txt('myStuff'));
     showBack(true);
-    content.innerHTML = `
+    renderContent(`
       <div class="my-stuff-tabs">
         <button class="active" data-tab="bookmark"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#i-bookmark"/></svg> ${currentLang === 'ko' ? '북마크' : 'Bookmarks'}</button>
         <button data-tab="highlight"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#i-highlight"/></svg> ${currentLang === 'ko' ? '하이라이트' : 'Highlights'}</button>
         <button data-tab="note"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#i-note"/></svg> ${currentLang === 'ko' ? '메모' : 'Notes'}</button>
       </div>
       <div class="my-stuff-list" id="myStuffList"></div>
-    `;
+    `);
     content.querySelectorAll('.my-stuff-tabs button').forEach(btn => {
       btn.addEventListener('click', () => {
         content.querySelectorAll('.my-stuff-tabs button').forEach(b => b.classList.remove('active'));
@@ -1419,11 +1486,11 @@
     }
 
     if (results.length === 0) {
-      content.innerHTML = `<div class="search-results"><p style="text-align:center;padding:40px;color:var(--text-dim)">'${query}' ${txt('noResult')}</p></div>`;
+      renderContent(`<div class="search-results"><p style="text-align:center;padding:40px;color:var(--text-dim)">'${query}' ${txt('noResult')}</p></div>`);
       return;
     }
 
-    content.innerHTML = `
+    renderContent(`
       <div class="search-results">
         <div class="result-count">'${query}' ${results.length} ${currentLang === 'ko' ? '건' : 'results'}</div>
         ${results.slice(0, 200).map(r => `
@@ -1434,7 +1501,7 @@
         `).join('')}
         ${results.length>200 ? '<p style="text-align:center;color:var(--text-dim);padding:12px">' + txt('tooMany') + '</p>' : ''}
       </div>
-    `;
+    `);
     content.querySelectorAll('.search-item').forEach(el => {
       el.addEventListener('click', () => {
         showChapter(el.dataset.book, parseInt(el.dataset.ch), parseInt(el.dataset.v));
