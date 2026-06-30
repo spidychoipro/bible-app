@@ -510,7 +510,7 @@
   };
 
   async function loadBibleData(transId) {
-    const CACHE_VER = 'v7';
+    const CACHE_VER = 'v9';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -520,6 +520,7 @@
         currentLang = TRANSLATIONS.find(t => t.id === transId)?.lang || 'ko';
         localStorage.setItem(TRANS_KEY, transId);
         updateOnlineStatus();
+        loading.classList.add('hide');
         return true;
       } catch (e) { sessionStorage.removeItem(cacheKey); }
     }
@@ -528,7 +529,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=7';
+      const url = 'data/bible-' + transId + '.json?v=9';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
@@ -549,13 +550,14 @@
 
 
   async function loadCompareData(transId) {
-    const CACHE_VER = 'v7';
+    const CACHE_VER = 'v9';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       try {
         compareBible = JSON.parse(cached);
         compareTranslation = transId;
+        loading.classList.add('hide');
         return true;
       } catch (e) { sessionStorage.removeItem(cacheKey); }
     }
@@ -564,7 +566,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=7';
+      const url = 'data/bible-' + transId + '.json?v=9';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       compareBible = await resp.json();
@@ -1027,12 +1029,9 @@
       document.body.appendChild(actionBar);
 
       document.getElementById('actBookmark').addEventListener('click', () => {
-        const sel = content.querySelector('.verse-item.selected');
-        if (!sel) return;
-        const book = sel.dataset.book;
-        const ch = parseInt(sel.dataset.ch);
-        const v = parseInt(sel.dataset.v);
-        const text = sel.querySelector('.vtext').textContent;
+        const target = getSelectedVerse();
+        if (!target) return;
+        const { sel, book, ch, v, text } = target;
         const added = toggleBookmark(book, ch, v, text);
         showToast(added ? '북마크에 추가됨' : '북마크에서 제거됨');
         const ind = sel.querySelector('.bm-indicator');
@@ -1050,11 +1049,9 @@
       });
 
       document.getElementById('actHighlight').addEventListener('click', () => {
-        const sel = content.querySelector('.verse-item.selected');
-        if (!sel) return;
-        const book = sel.dataset.book;
-        const ch = parseInt(sel.dataset.ch);
-        const v = parseInt(sel.dataset.v);
+        const target = getSelectedVerse();
+        if (!target) return;
+        const { book, ch, v } = target;
         const current = getHighlight(book, ch, v);
         let picker = document.getElementById('hlPicker');
         if (!picker) {
@@ -1078,12 +1075,8 @@
               setHighlight(b, cc, vv, c || null);
               picker.classList.remove('show');
               showToast(c ? '하이라이트 적용됨' : '하이라이트 제거됨');
-              const sel = content.querySelector(`.verse-item[data-v="${vv}"]`);
-              if (sel) {
-                sel.className = sel.className.replace(/\bhl-\w+\b/g, '').trim();
-                if (c) sel.classList.add('hl-' + c);
-                document.getElementById('actHighlight').style.opacity = c ? '1' : '0.5';
-              }
+              applyHighlightToVerse(b, cc, vv, c);
+              updateActionBar({ keepPicker: true });
             });
           });
         }
@@ -1095,29 +1088,25 @@
       });
 
       document.getElementById('actNote').addEventListener('click', () => {
-        const sel = content.querySelector('.verse-item.selected');
-        if (!sel) return;
-        const book = sel.dataset.book;
-        const ch = parseInt(sel.dataset.ch);
-        const v = parseInt(sel.dataset.v);
+        const target = getSelectedVerse();
+        if (!target) return;
+        const { book, ch, v } = target;
         const existing = getNote(book, ch, v);
         showNoteModal(book, ch, v, existing ? existing.text : '');
       });
 
       document.getElementById('actCard').addEventListener('click', () => {
-        const sel = content.querySelector('.verse-item.selected');
-        if (!sel) return;
-        const vn = sel.dataset.v;
-        const text = sel.querySelector('.vtext').textContent;
+        const target = getSelectedVerse();
+        if (!target) return;
+        const { v: vn, text } = target;
         const ref = currentBook + ' ' + currentChapter + ':' + vn;
         generateVerseCard(text, ref);
       });
 
       document.getElementById('actCopy').addEventListener('click', () => {
-        const sel = content.querySelector('.verse-item.selected');
-        if (!sel) return;
-        const vn = sel.dataset.v;
-        const text = sel.querySelector('.vtext').textContent;
+        const target = getSelectedVerse();
+        if (!target) return;
+        const { v: vn, text } = target;
         const ref = `${currentBook} ${currentChapter}:${vn}`;
         navigator.clipboard.writeText(`${ref} ${text}`).catch(() => {
           showToast('복사 실패');
@@ -1131,11 +1120,41 @@
       });
     }
 
-    function updateActionBar() {
+    function getSelectedVerse() {
+      const sel = content.querySelector('.verse-item.selected');
+      if (!sel) {
+        showToast(currentLang === 'ko' ? '먼저 절을 선택하세요' : 'Select a verse first');
+        return null;
+      }
+      const book = sel.dataset.book;
+      const ch = parseInt(sel.dataset.ch);
+      const v = parseInt(sel.dataset.v);
+      return { sel, book, ch, v, text: sel.querySelector('.vtext').textContent };
+    }
+
+    function applyHighlightToVerse(book, ch, v, color) {
+      const sel = content.querySelector(`.verse-item[data-book="${book}"][data-ch="${ch}"][data-v="${v}"]`);
+      if (!sel) return;
+      sel.className = sel.className.replace(/\bhl-\w+\b/g, '').trim();
+      if (color) sel.classList.add('hl-' + color);
+    }
+
+    function selectVerse(el) {
+      if (!el) return;
+      content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
+      el.classList.add('selected');
+      const v = parseInt(el.dataset.v);
+      history.replaceState(null, '', `#book=${encodeURIComponent(displayName)}&ch=${chNum}&v=${v}`);
+      savePosition(displayName, chNum, v);
+      updateActionBar();
+    }
+
+    function updateActionBar(options) {
+      const keepPicker = options && options.keepPicker;
       const sel = content.querySelector('.verse-item.selected');
       const bar = document.getElementById('verseActionBar');
       const picker = document.getElementById('hlPicker');
-      if (picker) picker.classList.remove('show');
+      if (picker && !keepPicker) picker.classList.remove('show');
       if (!bar) return;
       if (!sel) { bar.classList.remove('show'); return; }
       bar.classList.add('show');
@@ -1150,31 +1169,12 @@
       document.getElementById('actNote').classList.toggle('has-data', !!nt);
     }
 
-      /* ─── Single tap / Double tap / Long press ─── */
-      let tapTimer = null, tapEl = null;
+      /* ─── Tap selection / Long press ─── */
       let lpTimer = null;
 
       content.querySelectorAll('.verse-item').forEach(el => {
         el.addEventListener('click', () => {
-          // Double tap: same verse clicked within 300ms
-          if (tapTimer && tapEl === el) {
-            clearTimeout(tapTimer); tapTimer = null; tapEl = null;
-            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-            el.classList.toggle('selected');
-            history.replaceState(null, '', `#book=${encodeURIComponent(displayName)}&ch=${chNum}&v=${el.dataset.v}`);
-            updateActionBar();
-            savePosition(displayName, chNum, parseInt(el.dataset.v));
-            return;
-          }
-          // First tap: wait 300ms to decide single vs double
-          clearTimeout(tapTimer);
-          tapEl = el;
-          tapTimer = setTimeout(() => {
-            tapTimer = null; tapEl = null;
-            // Single tap: just save position, no action bar
-            savePosition(displayName, chNum, parseInt(el.dataset.v));
-            history.replaceState(null, '', `#book=${encodeURIComponent(displayName)}&ch=${chNum}&v=${el.dataset.v}`);
-          }, 300);
+          selectVerse(el);
         });
 
         // Long press → copy

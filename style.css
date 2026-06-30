@@ -660,6 +660,14 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   border-left: 3px solid var(--accent);
 }
 .verse-item.selected .vnum { color: var(--verse-num); }
+.verse-item.selected.hl-yellow { background: #fff3cd; }
+.verse-item.selected.hl-green { background: #d4edda; }
+.verse-item.selected.hl-blue { background: #d6e8ff; }
+.verse-item.selected.hl-pink { background: #f8d7da; }
+[data-theme="dark"] .verse-item.selected.hl-yellow { background: #5a4a00; }
+[data-theme="dark"] .verse-item.selected.hl-green { background: #1a4a2a; }
+[data-theme="dark"] .verse-item.selected.hl-blue { background: #1a3a6a; }
+[data-theme="dark"] .verse-item.selected.hl-pink { background: #5a2a3a; }
 
 /* ─── Home card layout ─── */
 .home-card {
