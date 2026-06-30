@@ -237,10 +237,27 @@
     document.documentElement.style.setProperty('--fs', val + 'px');
   }
 
+  const LH_KEY = 'bibleLineHeight';
+  const LS_KEY = 'bibleLetterSpacing';
+  function getLineHeight() { return parseFloat(localStorage.getItem(LH_KEY)) || 1.8; }
+  function setLineHeight(val) {
+    val = Math.max(1.2, Math.min(2.4, val));
+    localStorage.setItem(LH_KEY, val);
+    document.documentElement.style.setProperty('--lh', val);
+  }
+  function getLetterSpacing() { return parseFloat(localStorage.getItem(LS_KEY)) || 0; }
+  function setLetterSpacing(val) {
+    val = Math.max(0, Math.min(0.15, val));
+    localStorage.setItem(LS_KEY, val);
+    document.documentElement.style.setProperty('--ls', val + 'em');
+  }
+
   /* ─── Settings UI ─── */
   function openSettings() {
     const theme = getTheme();
     const fs = getFontSize();
+    const lh = getLineHeight();
+    const ls = getLetterSpacing();
     const ct = JSON.parse(localStorage.getItem('bibleCustomTheme') || '{}');
 
     settingsOverlay.innerHTML = `
@@ -277,8 +294,26 @@
         </div>
 
         <div class="section">
+          <div class="section-label">줄 간격: <span id="lhDisplay">${lh.toFixed(1)}</span></div>
+          <div class="font-control">
+            <span>좁게</span>
+            <input type="range" id="lhSlider" min="12" max="24" value="${Math.round(lh * 10)}">
+            <span>넓게</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-label">글자 간격: <span id="lsDisplay">${(ls * 100).toFixed(0)}</span></div>
+          <div class="font-control">
+            <span>좁게</span>
+            <input type="range" id="lsSlider" min="0" max="15" value="${Math.round(ls * 100)}">
+            <span>넓게</span>
+          </div>
+        </div>
+
+        <div class="section">
           <div class="section-label">미리보기</div>
-          <div style="padding:12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);line-height:1.8">
+          <div id="previewBlock" style="padding:12px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
             <span style="color:var(--accent);font-weight:600">요한복음 3:16</span><br>
             하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 저를 믿는 자마다 멸망치 않고 영생을 얻게 하려 하심이니라
           </div>
@@ -324,6 +359,27 @@
       display.textContent = v + 'px';
       setFontSize(v);
     };
+
+    // Line height slider
+    const lhSlider = $('#lhSlider');
+    const lhDisplay = $('#lhDisplay');
+    const previewBlock = $('#previewBlock');
+    lhSlider.oninput = () => {
+      const v = parseInt(lhSlider.value) / 10;
+      lhDisplay.textContent = v.toFixed(1);
+      setLineHeight(v);
+      if (previewBlock) previewBlock.style.lineHeight = v;
+    };
+
+    // Letter spacing slider
+    const lsSlider = $('#lsSlider');
+    const lsDisplay = $('#lsDisplay');
+    lsSlider.oninput = () => {
+      const v = parseInt(lsSlider.value) / 100;
+      lsDisplay.textContent = (v * 100).toFixed(0);
+      setLetterSpacing(v);
+      if (previewBlock) previewBlock.style.letterSpacing = v + 'em';
+    };
   }
 
   function closeSettings() { settingsOverlay.classList.remove('open'); settingsOverlay.innerHTML = ''; }
@@ -337,6 +393,8 @@
   /* ─── Init theme & font ─── */
   applyTheme(getTheme());
   setFontSize(getFontSize());
+  setLineHeight(getLineHeight());
+  setLetterSpacing(getLetterSpacing());
   updateThemeUI();
 
   /* ─── Navigation ─── */
@@ -344,6 +402,7 @@
   btnSearch.addEventListener('click', toggleSearch);
   btnMyStuff.addEventListener('click', showMyStuff);
   btnSettings.addEventListener('click', openSettings);
+  title.addEventListener('click', () => { if (currentView !== 'home') showHome(); });
   searchClose.addEventListener('click', () => { searchBar.style.display='none'; searchInput.value=''; });
   searchInput.addEventListener('keydown', e => { if (e.key==='Enter') doSearch(searchInput.value); });
 
@@ -533,6 +592,72 @@
     overlay.style.display = 'flex';
   }
 
+  /* ─── Book navigator (dropdown from chapter view) ─── */
+  let bNavState = 'ot';
+
+  function showBookNavigator() {
+    let ov = document.getElementById('bookNavOverlay');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'bookNavOverlay';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:45;display:none;align-items:center;justify-content:center';
+      document.body.appendChild(ov);
+      ov.addEventListener('click', e => { if (e.target === ov) ov.style.display = 'none'; });
+    }
+    ov.innerHTML = `
+      <div style="background:var(--surface);width:92%;max-width:400px;border-radius:14px;padding:16px 20px;box-shadow:0 4px 24px var(--shadow);max-height:80vh;overflow-y:auto">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="bn-tab active" data-t="ot" style="flex:1;padding:8px;border:none;border-radius:6px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff">${currentLang === 'ko' ? '구약' : 'OT'}</button>
+          <button class="bn-tab" data-t="nt" style="flex:1;padding:8px;border:none;border-radius:6px;font-weight:600;cursor:pointer;background:var(--hover);color:var(--text)">${currentLang === 'ko' ? '신약' : 'NT'}</button>
+        </div>
+        <div id="bnList"></div>
+        <button id="bnClose" style="width:100%;margin-top:10px;padding:10px;border:none;border-radius:8px;background:var(--hover);color:var(--text);cursor:pointer;font-size:0.85em">${currentLang === 'ko' ? '닫기' : 'Close'}</button>
+      </div>`;
+    ov.style.display = 'flex';
+    document.getElementById('bnClose').addEventListener('click', () => ov.style.display = 'none');
+    ov.querySelectorAll('.bn-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        ov.querySelectorAll('.bn-tab').forEach(b => { b.style.background = 'var(--hover)'; b.style.color = 'var(--text)'; });
+        btn.style.background = 'var(--accent)'; btn.style.color = '#fff';
+        bNavState = btn.dataset.t;
+        renderBNBookList(ov);
+      });
+    });
+    renderBNBookList(ov);
+  }
+
+  function renderBNBookList(ov) {
+    const list = document.getElementById('bnList');
+    const names = getOrder(bNavState);
+    list.innerHTML = names.map(n => {
+      const book = findBook(n);
+      const ch = book ? book.chapters.length : 0;
+      return `<div class="bn-book-item" data-book="${n}" style="padding:10px 14px;border-radius:8px;cursor:pointer;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;background:var(--hover);color:var(--text);transition:background 0.15s">
+        <span style="font-weight:500">${n}</span>
+        <span style="font-size:0.75em;opacity:0.6">${ch}${txt('chapter').trim()}</span>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.bn-book-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const name = el.dataset.book;
+        const book = findBook(name);
+        if (!book) return;
+        // Replace list with chapter grid
+        list.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0">${book.chapters.map((_,i) =>
+          `<button class="bn-ch-item" data-ch="${i+1}" style="width:48px;height:48px;border:none;border-radius:8px;background:var(--hover);color:var(--text);font-size:0.85em;font-weight:600;cursor:pointer;transition:background 0.15s">${i+1}</button>`
+        ).join('')}</div>
+        <button id="bnBackToList" style="margin-top:8px;padding:6px 12px;border:none;border-radius:6px;background:none;color:var(--accent);cursor:pointer;font-size:0.8em">← ${currentLang === 'ko' ? '책 목록' : 'Back to books'}</button>`;
+        document.getElementById('bnBackToList').addEventListener('click', () => renderBNBookList(ov));
+        list.querySelectorAll('.bn-ch-item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            ov.style.display = 'none';
+            showChapter(name, parseInt(btn.dataset.ch), 1);
+          });
+        });
+      });
+    });
+  }
+
   function showBook(name) {
     currentView = 'book';
     currentBook = name; currentChapter = null;
@@ -630,6 +755,10 @@
         if (chNum < book.chapters.length) showChapter(name, chNum + 1);
       });
     }
+
+    /* ─── Chapter title → book navigator ─── */
+    const ct = content.querySelector('.chapter-title');
+    if (ct) ct.addEventListener('click', () => showBookNavigator());
 
     /* ─── Action bar ─── */
     let actionBar = document.getElementById('verseActionBar');
@@ -756,13 +885,50 @@
       document.getElementById('actNote').style.opacity = nt ? '1' : '0.5';
     }
 
+      /* ─── Single tap / Double tap / Long press ─── */
+      let tapTimer = null, tapEl = null;
+      let lpTimer = null;
+
       content.querySelectorAll('.verse-item').forEach(el => {
         el.addEventListener('click', () => {
-          content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
-          el.classList.toggle('selected');
-          history.replaceState(null, '', `#book=${encodeURIComponent(name)}&ch=${chNum}&v=${el.dataset.v}`);
-          updateActionBar();
-          savePosition(name, chNum, parseInt(el.dataset.v));
+          // Double tap: same verse clicked within 300ms
+          if (tapTimer && tapEl === el) {
+            clearTimeout(tapTimer); tapTimer = null; tapEl = null;
+            content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
+            el.classList.toggle('selected');
+            history.replaceState(null, '', `#book=${encodeURIComponent(name)}&ch=${chNum}&v=${el.dataset.v}`);
+            updateActionBar();
+            savePosition(name, chNum, parseInt(el.dataset.v));
+            return;
+          }
+          // First tap: wait 300ms to decide single vs double
+          clearTimeout(tapTimer);
+          tapEl = el;
+          tapTimer = setTimeout(() => {
+            tapTimer = null; tapEl = null;
+            // Single tap: just save position, no action bar
+            savePosition(name, chNum, parseInt(el.dataset.v));
+            history.replaceState(null, '', `#book=${encodeURIComponent(name)}&ch=${chNum}&v=${el.dataset.v}`);
+          }, 300);
+        });
+
+        // Long press → copy
+        el.addEventListener('touchstart', () => {
+          lpTimer = setTimeout(() => {
+            lpTimer = null;
+            const t = el.querySelector('.vtext').textContent;
+            const r = `${name} ${chNum}:${el.dataset.v}`;
+            navigator.clipboard.writeText(`${r} ${t}`).then(() => showToast('복사되었습니다'));
+          }, 500);
+        }, { passive: true });
+        el.addEventListener('touchend', () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } }, { passive: true });
+        el.addEventListener('touchmove', () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } }, { passive: true });
+
+        el.addEventListener('contextmenu', e => {
+          e.preventDefault();
+          const t = el.querySelector('.vtext').textContent;
+          const r = `${name} ${chNum}:${el.dataset.v}`;
+          navigator.clipboard.writeText(`${r} ${t}`).then(() => showToast('복사되었습니다'));
         });
       });
 
