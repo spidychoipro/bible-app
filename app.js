@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   'use strict';
 
   const TRANS_KEY = 'bibleTranslation';
@@ -18,6 +18,9 @@
   let currentTestament = 'ot';
   let currentBook = null;
   let currentChapter = null;
+  let compareBible = [];
+  let compareTranslation = null;
+  let isCompareMode = false;
 
   const koNames = {
     "Genesis":"창세기","Exodus":"출애굽기","Leviticus":"레위기","Numbers":"민수기","Deuteronomy":"신명기",
@@ -491,6 +494,7 @@
     if (currentView === 'chapter') { showBook(currentBook); }
     else if (currentView === 'book') { showHome(); }
     else if (currentView === 'search') { showHome(); }
+    else if (currentView === 'compare') { exitCompare(); }
     else if (currentView === 'verse') { showBook(currentBook); }
     else if (currentView === 'mystuff') { showHome(); }
   }
@@ -543,7 +547,41 @@
     }
   }
 
-  /* ─── Online/Offline detection ─── */
+
+  async function loadCompareData(transId) {
+    const CACHE_VER = 'v2';
+    const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        compareBible = JSON.parse(cached);
+        compareTranslation = transId;
+        return true;
+      } catch (e) { sessionStorage.removeItem(cacheKey); }
+    }
+    loading.classList.remove('hide');
+    loading.textContent = txt('loading');
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 30000);
+    try {
+      const url = 'data/bible-' + transId + '.json?v=2';
+      const resp = await fetch(url, { signal: ctrl.signal });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      compareBible = await resp.json();
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(compareBible)); } catch (e) {}
+      compareTranslation = transId;
+      clearTimeout(timeout);
+      loading.classList.add('hide');
+      return true;
+    } catch(e) {
+      clearTimeout(timeout);
+      loading.innerHTML = txt('loadFail') + '<br><small>' + e.message + '<br><br><a href="?reset=' + Date.now() + '" style="color:#fff">' + txt('retry') + '</a></small>';
+      console.error(e);
+      return false;
+    }
+  }
+
+  /* ── Online/Offline detection ─── */
   const OFFLINE_MSGS = { ko: '인터넷 연결이 끊어졌습니다', en: 'You are offline' };
   function updateOnlineStatus() {
     offlineBanner.textContent = OFFLINE_MSGS[currentLang] || OFFLINE_MSGS.en;
@@ -574,6 +612,12 @@
       return bible.find(b => b.name === en);
     }
     return bible.find(b => b.name === name);
+  }
+
+  function findBookIn(data, displayName) {
+    let enName = displayName;
+    if (currentLang === 'ko') enName = enNames[displayName] || displayName;
+    return data.find(b => b.name === enName);
   }
 
   function showHome() {
@@ -641,6 +685,14 @@
   }
 
   function showTranslationPicker() {
+    // Reset compare-mode state
+    const existingOverlay = document.getElementById('transOverlay');
+    if (existingOverlay) {
+      delete existingOverlay._cmpCallback;
+      existingOverlay.querySelectorAll('.trans-item').forEach(x => x.style.display = '');
+      const h3 = existingOverlay.querySelector('h3');
+      if (h3) h3.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle;margin-right:4px"><use href="#i-book"/></svg> ' + (currentLang === 'ko' ? '번역 선택' : 'Select Translation');
+    }
     let overlay = document.getElementById('transOverlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -668,11 +720,35 @@
         const id = el.dataset.id;
         if (id === currentTranslation) { overlay.style.display = 'none'; return; }
         overlay.style.display = 'none';
+        if (overlay._cmpCallback) {
+          const cb = overlay._cmpCallback;
+          delete overlay._cmpCallback;
+          overlay.querySelectorAll('.trans-item').forEach(x => x.style.display = '');
+          const h3 = overlay.querySelector('h3');
+          if (h3) h3.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle;margin-right:4px"><use href="#i-book"/></svg> '
+            + (currentLang === 'ko' ? '번역 선택' : 'Select Translation');
+          cb(id);
+          return;
+        }
         const ok = await loadBibleData(id);
         if (ok) showHome();
       });
     });
     overlay.style.display = 'flex';
+  }
+
+  function showComparePicker(callback) {
+    showTranslationPicker();
+    const overlay = document.getElementById('transOverlay');
+    if (overlay) {
+      overlay._cmpCallback = callback;
+      const h3 = overlay.querySelector('h3');
+      if (h3) h3.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle;margin-right:4px"><use href="#i-book"/></svg> '
+        + (currentLang === 'ko' ? '비교할 번역 선택' : 'Select Translation to Compare');
+      overlay.querySelectorAll('.trans-item').forEach(el => {
+        if (el.dataset.id === currentTranslation) el.style.display = 'none';
+      });
+    }
   }
 
   /* ─── Book navigator (dropdown from chapter view) ─── */
@@ -788,7 +864,74 @@
     if (ds) ds.addEventListener('click', () => showChapter(name, chNum));
   }
 
-  function showChapter(name, chNum, targetVerse) {
+  function showCompareChapter(name, chNum) {
+    currentView = 'compare';
+    currentBook = name; currentChapter = chNum;
+    setTitle(name + ' ' + chNum + txt('chapter'));
+    showBack(true);
+    const primaryBook = findBook(name);
+    const compareBook = findBookIn(compareBible, name);
+    if (!primaryBook || !primaryBook.chapters[chNum-1]) {
+      renderContent('<p style="padding:16px">' + (currentLang === 'ko' ? '데이터를 찾을 수 없습니다' : 'Data not found') + '</p>');
+      return;
+    }
+    const primaryVerses = primaryBook.chapters[chNum-1];
+    const compareVerses = compareBook ? compareBook.chapters[chNum-1] : [];
+    const maxV = Math.max(primaryVerses.length, compareVerses ? compareVerses.length : 0);
+    const primaryLabel = TRANSLATIONS.find(t => t.id === currentTranslation)?.label || currentTranslation;
+    const compareLabel = TRANSLATIONS.find(t => t.id === compareTranslation)?.label || compareTranslation;
+    const ab = document.getElementById('verseActionBar');
+    if (ab) ab.classList.remove('show');
+    let rowsHtml = '';
+    for (let i = 0; i < maxV; i++) {
+      const vn = i + 1;
+      const pText = primaryVerses[i] ? escHtml(primaryVerses[i]) : '';
+      const cText = (compareVerses && compareVerses[i]) ? escHtml(compareVerses[i]) : '';
+      const bm = isBookmarked(name, chNum, vn);
+      const hl = getHighlight(name, chNum, vn);
+      const nt = getNote(name, chNum, vn);
+      const hlCls = hl ? ' cmp-hl-' + hl.color : '';
+      const bmMark = bm ? '<span class="bm-indicator"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><use href="#i-bookmark"/></svg></span>' : '';
+      const ntMark = nt ? '<span class="nt-indicator"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#i-note"/></svg></span>' : '';
+      rowsHtml += '<div class="cmp-row">' + '<div class="cmp-cell cmp-cell-primary' + hlCls + '">' + '<span class="vnum">' + vn + '</span>' + '<span class="vtext">' + pText + '</span>' + bmMark + ntMark + '</div>' + '<div class="cmp-cell cmp-cell-secondary">' + '<span class="vnum">' + vn + '</span>' + '<span class="vtext">' + cText + '</span>' + '</div>' + '</div>';
+    }
+    renderContent(''
+      + '<div class="compare-view">'
+      + '<div class="cmp-header">'
+      + '<span class="cmp-label">' + primaryLabel + ' | ' + compareLabel + '</span>'
+      + '<button class="cmp-exit-btn" id="cmpExit">✕ ' + (currentLang === 'ko' ? '단일보기' : 'Single View') + '</button>'
+      + '</div>'
+      + '<div class="cmp-body">'
+      + rowsHtml
+      + '</div>'
+      + '<div class="chapter-nav">'
+      + '<button id="prevCh" class="' + (chNum > 1 ? '' : 'hidden') + '">'
+      + '<span class="arrow">←</span> <span>' + txt('prev') + '</span>'
+      + '</button>'
+      + '<button id="nextCh" class="' + (chNum < primaryBook.chapters.length ? '' : 'hidden') + '">'
+      + '<span>' + txt('next') + '</span> <span class="arrow">→</span>'
+      + '</button>'
+      + '</div>'
+      + '</div>'
+    );
+    content.scrollTop = 0;
+    window.scrollTo(0, 0);
+    const prev = $('#prevCh');
+    const next = $('#nextCh');
+    if (prev) prev.addEventListener('click', () => { if (chNum > 1) showCompareChapter(name, chNum - 1); });
+    if (next) next.addEventListener('click', () => { if (chNum < primaryBook.chapters.length) showCompareChapter(name, chNum + 1); });
+    const exitBtn = $('#cmpExit');
+    if (exitBtn) exitBtn.addEventListener('click', exitCompare);
+  }
+
+  function exitCompare() {
+    compareBible = [];
+    compareTranslation = null;
+    isCompareMode = false;
+    showChapter(currentBook, currentChapter, 1);
+  }
+
+    function showChapter(name, chNum, targetVerse) {
     currentView = 'chapter';
     currentBook = name; currentChapter = chNum;
     setTitle(name + ' ' + chNum + txt('chapter'));
@@ -799,7 +942,7 @@
 
     renderContent(`
       <div class="verse-view">
-        <div class="chapter-title">${name} ${chNum}${txt('chapter')}</div>
+        <div class=\"chapter-title\"><span class=\"ct-text\">${name} ${chNum}${txt('chapter')}</span><span class=\"ct-compare\" id=\"btnCompare\">⧃</span></div>
         ${verses.map((v,i)=>{
           const vn = i+1;
           const bm = isBookmarked(name, chNum, vn);
@@ -841,7 +984,21 @@
 
     /* ─── Chapter title → book navigator ─── */
     const ct = content.querySelector('.chapter-title');
-    if (ct) ct.addEventListener('click', () => showBookNavigator());
+    if (ct) ct.addEventListener('click', (e) => {
+      if (e.target.closest('.ct-compare')) return;
+      showBookNavigator();
+    });
+    const cmpBtn = document.getElementById('btnCompare');
+    if (cmpBtn) cmpBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showComparePicker(async (id) => {
+        const ok = await loadCompareData(id);
+        if (ok) {
+          isCompareMode = true;
+          showCompareChapter(currentBook, currentChapter);
+        }
+      });
+    });
 
     /* ─── Action bar ─── */
     let actionBar = document.getElementById('verseActionBar');
