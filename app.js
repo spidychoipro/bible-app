@@ -97,14 +97,9 @@
   const title = $('#title');
   const content = $('#content');
   const btnBack = $('#btnBack');
-  const btnSearch = $('#btnSearch');
-  const btnMyStuff = $('#btnMyStuff');
-  const btnSettings = $('#btnSettings');
-  const searchBar = $('#searchBar');
-  const searchInput = $('#searchInput');
-  const searchClose = $('#searchClose');
   const loading = $('#loading');
   const settingsOverlay = $('#settingsOverlay');
+  const tabBar = $('#tabBar');
 
   /* ─── Reading position ─── */
   const POS_KEY = 'bibleLastPos';
@@ -254,6 +249,7 @@
 
   /* ─── Settings UI ─── */
   function openSettings() {
+    setActiveTab('settings');
     const theme = getTheme();
     const fs = getFontSize();
     const lh = getLineHeight();
@@ -385,9 +381,7 @@
   function closeSettings() { settingsOverlay.classList.remove('open'); settingsOverlay.innerHTML = ''; }
 
   function updateThemeUI() {
-    const theme = getTheme();
-    const icon = themeIcons[theme] || '🎨';
-    btnSettings.textContent = icon;
+    // Theme icon update not needed (no header settings button)
   }
 
   /* ─── Init theme & font ─── */
@@ -399,16 +393,24 @@
 
   /* ─── Navigation ─── */
   btnBack.addEventListener('click', goBack);
-  btnSearch.addEventListener('click', toggleSearch);
-  btnMyStuff.addEventListener('click', showMyStuff);
-  btnSettings.addEventListener('click', openSettings);
   title.addEventListener('click', () => { if (currentView !== 'home') showHome(); });
-  searchClose.addEventListener('click', () => { searchBar.style.display='none'; searchInput.value=''; });
-  searchInput.addEventListener('keydown', e => { if (e.key==='Enter') doSearch(searchInput.value); });
+  function setActiveTab(tab) {
+    tabBar.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  }
+  tabBar.addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    const tab = btn.dataset.tab;
+    setActiveTab(tab);
+    if (tab === 'home') showHome();
+    else if (tab === 'search') showSearchView();
+    else if (tab === 'mystuff') showMyStuff();
+    else if (tab === 'settings') openSettings();
+  });
 
   document.addEventListener('keydown', e => {
     if (settingsOverlay.classList.contains('open')) return;
-    if (document.activeElement === searchInput) return;
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -430,9 +432,21 @@
     }
   });
 
-  function toggleSearch() {
-    if (searchBar.style.display === 'flex') { searchBar.style.display='none'; return; }
-    searchBar.style.display='flex'; searchInput.focus();
+  function showSearchView() {
+    currentView = 'search';
+    setActiveTab('search');
+    setTitle(txt('searchTitle'));
+    showBack(true);
+    content.innerHTML = `
+      <div class="search-view">
+        <div class="sv-bar">
+          <input type="text" class="sv-input" id="svInput" placeholder="${currentLang === 'ko' ? '검색어 입력...' : 'Search...'}" autocomplete="off">
+        </div>
+        <div id="svResults"></div>
+      </div>`;
+    const input = document.getElementById('svInput');
+    input.focus();
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(input.value); });
   }
 
   function goBack() {
@@ -503,23 +517,30 @@
   function showHome() {
     currentView = 'home';
     currentBook = null; currentChapter = null;
+    setActiveTab('home');
     setTitle(txt('home'));
     showBack(false);
     const curTrans = TRANSLATIONS.find(t => t.id === currentTranslation);
     const dv = getDailyVerse();
     content.innerHTML = `
-      <div class="trans-bar" id="transBar">
-        <span class="trans-label">📖</span>
-        <span class="trans-name" id="transName">${curTrans ? curTrans.label : '??'}</span>
-        <span class="trans-arrow">▾</span>
-      </div>
       ${dv ? `
-      <div class="daily-verse" id="dailyVerse" data-book="${dv.enName}" data-ch="${dv.ch}" data-v="${dv.v}">
-        <div class="dv-label">${currentLang === 'ko' ? '✝ 오늘의 말씀' : '✝ Verse of the Day'}</div>
-        <div class="dv-text">${escHtml(dv.text)}</div>
-        <div class="dv-ref">${dv.book} ${dv.ch}:${dv.v}</div>
+      <div class="home-card">
+        <div class="cv-card" id="dailyVerse" data-book="${dv.enName}" data-ch="${dv.ch}" data-v="${dv.v}">
+          <div class="cv-label">${currentLang === 'ko' ? '✝ 오늘의 말씀' : '✝ Verse of the Day'}</div>
+          <div class="cv-text">${escHtml(dv.text)}</div>
+          <div class="cv-ref">${dv.book} ${dv.ch}:${dv.v}</div>
+        </div>
       </div>` : ''}
-      ${showReadingPlanUI()}
+      <div class="home-card">
+        <div class="rp-card" id="readingPlanCard">${showReadingPlanUI()}</div>
+      </div>
+      <div class="home-card" id="transCard">
+        <div class="tb-card" id="transBar">
+          <span class="tb-label"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-book"/></svg></span>
+          <span class="tb-name" id="transName">${curTrans ? curTrans.label : '??'}</span>
+          <span class="tb-arrow">▾</span>
+        </div>
+      </div>
       <div class="testament-tabs">
         <button class="active" data-t="ot">${currentLang === 'ko' ? '구약' : 'OT'}</button>
         <button data-t="nt">${currentLang === 'ko' ? '신약' : 'NT'}</button>
@@ -564,7 +585,7 @@
       overlay.id = 'transOverlay';
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:45;display:none;align-items:center;justify-content:center';
       overlay.innerHTML = '<div style="background:var(--surface);width:90%;max-width:360px;border-radius:14px;padding:20px;box-shadow:0 4px 24px var(--shadow);max-height:70vh;overflow-y:auto">'
-        + '<h3 style="font-size:1em;margin-bottom:12px;color:var(--text)">📖 ' + (currentLang === 'ko' ? '번역 선택' : 'Select Translation') + '</h3>'
+        + '<h3 style="font-size:1em;margin-bottom:12px;color:var(--text)"><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle;margin-right:4px"><use href="#i-book"/></svg> ' + (currentLang === 'ko' ? '번역 선택' : 'Select Translation') + '</h3>'
         + '<div id="transList"></div>'
         + '<button id="transClose" style="width:100%;margin-top:12px;padding:10px;border:none;border-radius:8px;background:var(--hover);color:var(--text);cursor:pointer;font-size:0.85em">'
         + (currentLang === 'ko' ? '닫기' : 'Close') + '</button></div>';
@@ -723,8 +744,8 @@
           const hl = getHighlight(name, chNum, vn);
           const nt = getNote(name, chNum, vn);
           const hlCls = hl ? ' hl-' + hl.color : '';
-          const bmMark = bm ? '<span class="bm-indicator">★</span>' : '';
-          const ntMark = nt ? '<span class="nt-indicator">📝</span>' : '';
+          const bmMark = bm ? '<span class="bm-indicator"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><use href="#i-bookmark"/></svg></span>' : '';
+          const ntMark = nt ? '<span class="nt-indicator"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#i-note"/></svg></span>' : '';
           return `<div class="verse-item${hlCls}" data-v="${vn}" data-book="${name}" data-ch="${chNum}"><span class="vnum">${vn}</span><span class="vtext">${v}</span>${bmMark}${ntMark}</div>`;
         }).join('')}
       </div>
@@ -767,12 +788,12 @@
       actionBar.id = 'verseActionBar';
       actionBar.className = 'verse-action-bar';
       actionBar.innerHTML = `
-        <button class="act-btn" id="actBookmark" title="북마크">☆</button>
-        <button class="act-btn" id="actHighlight" title="하이라이트">🟡</button>
-        <button class="act-btn" id="actNote" title="메모">📝</button>
-        <button class="act-btn" id="actCard" title="말씀카드">🖼️</button>
-        <button class="act-btn" id="actCopy" title="복사">📋</button>
-        <button class="act-btn" id="actDeselect" title="선택안함">✕</button>
+        <button class="act-btn" id="actBookmark" title="북마크"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-bookmark"/></svg> ${currentLang === 'ko' ? '북마크' : 'Bookmark'}</button>
+        <button class="act-btn" id="actHighlight" title="하이라이트"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-highlight"/></svg> ${currentLang === 'ko' ? '하이라이트' : 'Highlight'}</button>
+        <button class="act-btn" id="actNote" title="메모"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-note"/></svg> ${currentLang === 'ko' ? '메모' : 'Note'}</button>
+        <button class="act-btn" id="actCard" title="말씀카드"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-image"/></svg> ${currentLang === 'ko' ? '카드' : 'Card'}</button>
+        <button class="act-btn" id="actCopy" title="복사"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-copy"/></svg> ${currentLang === 'ko' ? '복사' : 'Copy'}</button>
+        <button class="act-btn" id="actDeselect" title="선택안함"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-close"/></svg> ${currentLang === 'ko' ? '취소' : 'Deselect'}</button>
       `;
       document.body.appendChild(actionBar);
 
@@ -878,7 +899,8 @@
       const book = sel.dataset.book;
       const ch = parseInt(sel.dataset.ch);
       const v = parseInt(sel.dataset.v);
-      document.getElementById('actBookmark').textContent = isBookmarked(book, ch, v) ? '★' : '☆';
+      const bmkBtn = document.getElementById('actBookmark');
+      bmkBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-bookmark${isBookmarked(book, ch, v) ? '' : '-outline'}"/></svg> ${currentLang === 'ko' ? '북마크' : 'Bookmark'}`;
       const hl = getHighlight(book, ch, v);
       document.getElementById('actHighlight').style.opacity = hl ? '1' : '0.5';
       const nt = getNote(book, ch, v);
@@ -1003,7 +1025,7 @@
       overlay.className = 'note-modal-overlay';
       overlay.innerHTML = `
         <div class="note-modal">
-          <h3>📝 메모</h3>
+          <h3><svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle;margin-right:4px"><use href="#i-note"/></svg> 메모</h3>
           <div class="ref"></div>
           <textarea placeholder="메모를 입력하세요..."></textarea>
           <div class="note-modal-actions">
@@ -1058,13 +1080,14 @@
   /* ─── My Stuff view ─── */
   function showMyStuff() {
     currentView = 'mystuff';
+    setActiveTab('mystuff');
     setTitle(txt('myStuff'));
     showBack(true);
     content.innerHTML = `
       <div class="my-stuff-tabs">
-        <button class="active" data-tab="bookmark">⭐ 북마크</button>
-        <button data-tab="highlight">🟡 하이라이트</button>
-        <button data-tab="note">📝 메모</button>
+        <button class="active" data-tab="bookmark"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#i-bookmark"/></svg> ${currentLang === 'ko' ? '북마크' : 'Bookmarks'}</button>
+        <button data-tab="highlight"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#i-highlight"/></svg> ${currentLang === 'ko' ? '하이라이트' : 'Highlights'}</button>
+        <button data-tab="note"><svg viewBox="0 0 24 24" width="16" height="16"><use href="#i-note"/></svg> ${currentLang === 'ko' ? '메모' : 'Notes'}</button>
       </div>
       <div class="my-stuff-list" id="myStuffList"></div>
     `;
@@ -1248,14 +1271,14 @@
     const dv = document.getElementById('dailyVerse');
     if (!dv) return;
     const btn = document.createElement('button');
-    btn.className = 'dv-card-btn';
-    btn.textContent = '🖼️';
+    btn.className = 'cv-card-btn';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20"><use href="#i-image"/></svg>';
     btn.title = '말씀카드 만들기';
     dv.appendChild(btn);
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      const t = dv.querySelector('.dv-text')?.textContent;
-      const r = dv.querySelector('.dv-ref')?.textContent;
+      const t = dv.querySelector('.cv-text')?.textContent;
+      const r = dv.querySelector('.cv-ref')?.textContent;
       if (t && r) generateVerseCard(t, r);
     });
   }
@@ -1331,7 +1354,7 @@
     return `
       <div class="reading-plan" id="readingPlan">
         <div class="rp-header">
-          <span class="rp-title">${currentLang === 'ko' ? '📖 1년 1독' : '📖 Bible in a Year'}</span>
+          <span class="rp-title"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:4px"><use href="#i-book"/></svg> ${currentLang === 'ko' ? '1년 1독' : 'Bible in a Year'}</span>
           <span class="rp-day">${currentLang === 'ko' ? 'Day' : 'Day'} ${today.day + 1}/${today.total}</span>
         </div>
         <div class="rp-progress">
@@ -1342,7 +1365,7 @@
           <div class="rp-today-label">${currentLang === 'ko' ? '오늘의 읽기' : 'Today'}</div>
           <div class="rp-chapters">${today.items.map(i => '<span class="rp-ch">' + displayCh(i) + '</span>').join(', ')}</div>
           <button class="rp-check ${isDayComplete(today.day) ? 'done' : ''}" data-day="${today.day}">
-            ${isDayComplete(today.day) ? '✅' : '☑️'} ${currentLang === 'ko' ? '읽음' : 'Done'}
+            <svg viewBox="0 0 24 24" width="16" height="16"><use href="#${isDayComplete(today.day) ? 'i-check-square' : 'i-square'}"/></svg> ${currentLang === 'ko' ? '읽음' : 'Done'}
           </button>
         </div>
       </div>
@@ -1357,7 +1380,7 @@
       e.stopPropagation();
       const day = parseInt(this.dataset.day);
       const done = toggleDayComplete(day);
-      this.innerHTML = (done ? '✅ ' : '☑️ ') + (currentLang === 'ko' ? '읽음' : 'Done');
+      this.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16"><use href="#${done ? 'i-check-square' : 'i-square'}"/></svg> ${currentLang === 'ko' ? '읽음' : 'Done'}`;
       this.classList.toggle('done', done);
       // Update progress bar
       const plan = getReadingPlan();
@@ -1381,7 +1404,6 @@
     currentView = 'search';
     setTitle(txt('searchTitle'));
     showBack(true);
-    searchBar.style.display='none';
 
     const results = [];
     const lower = query.toLowerCase();
