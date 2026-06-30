@@ -510,7 +510,7 @@
   };
 
   async function loadBibleData(transId) {
-    const CACHE_VER = 'v2';
+    const CACHE_VER = 'v7';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -528,7 +528,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=2';
+      const url = 'data/bible-' + transId + '.json?v=7';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
@@ -549,7 +549,7 @@
 
 
   async function loadCompareData(transId) {
-    const CACHE_VER = 'v2';
+    const CACHE_VER = 'v7';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -564,7 +564,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=2';
+      const url = 'data/bible-' + transId + '.json?v=7';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       compareBible = await resp.json();
@@ -608,15 +608,19 @@
 
   function findBook(name) {
     if (currentLang === 'ko') {
-      const en = enNames[name];
+      const en = enNames[name] || name;
       return bible.find(b => b.name === en);
     }
-    return bible.find(b => b.name === name);
+    return bible.find(b => b.name === (enNames[name] || name));
+  }
+
+  function displayBookName(book, fallback) {
+    if (!book) return fallback;
+    return currentLang === 'ko' ? (koNames[book.name] || fallback || book.name) : book.name;
   }
 
   function findBookIn(data, displayName) {
-    let enName = displayName;
-    if (currentLang === 'ko') enName = enNames[displayName] || displayName;
+    let enName = enNames[displayName] || displayName;
     return data.find(b => b.name === enName);
   }
 
@@ -820,6 +824,7 @@
   function showBook(name) {
     currentView = 'book';
     currentBook = name; currentChapter = null;
+    setActiveTab('');
     setTitle(name);
     showBack(true);
     const book = findBook(name);
@@ -842,6 +847,7 @@
   function showChapterVerses(name, chNum) {
     currentView = 'verse';
     currentBook = name; currentChapter = chNum;
+    setActiveTab('');
     setTitle(name + ' ' + chNum + txt('chapter'));
     showBack(true);
     const book = findBook(name);
@@ -866,11 +872,13 @@
 
   function showCompareChapter(name, chNum) {
     currentView = 'compare';
-    currentBook = name; currentChapter = chNum;
-    setTitle(name + ' ' + chNum + txt('chapter'));
-    showBack(true);
+    setActiveTab('');
     const primaryBook = findBook(name);
-    const compareBook = findBookIn(compareBible, name);
+    const displayName = displayBookName(primaryBook, name);
+    currentBook = displayName; currentChapter = chNum;
+    setTitle(displayName + ' ' + chNum + txt('chapter'));
+    showBack(true);
+    const compareBook = findBookIn(compareBible, displayName);
     if (!primaryBook || !primaryBook.chapters[chNum-1]) {
       renderContent('<p style="padding:16px">' + (currentLang === 'ko' ? '데이터를 찾을 수 없습니다' : 'Data not found') + '</p>');
       return;
@@ -887,9 +895,9 @@
       const vn = i + 1;
       const pText = primaryVerses[i] ? escHtml(primaryVerses[i]) : '';
       const cText = (compareVerses && compareVerses[i]) ? escHtml(compareVerses[i]) : '';
-      const bm = isBookmarked(name, chNum, vn);
-      const hl = getHighlight(name, chNum, vn);
-      const nt = getNote(name, chNum, vn);
+      const bm = isBookmarked(displayName, chNum, vn);
+      const hl = getHighlight(displayName, chNum, vn);
+      const nt = getNote(displayName, chNum, vn);
       const hlCls = hl ? ' cmp-hl-' + hl.color : '';
       const bmMark = bm ? '<span class="bm-indicator"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><use href="#i-bookmark"/></svg></span>' : '';
       const ntMark = nt ? '<span class="nt-indicator"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#i-note"/></svg></span>' : '';
@@ -918,8 +926,8 @@
     window.scrollTo(0, 0);
     const prev = $('#prevCh');
     const next = $('#nextCh');
-    if (prev) prev.addEventListener('click', () => { if (chNum > 1) showCompareChapter(name, chNum - 1); });
-    if (next) next.addEventListener('click', () => { if (chNum < primaryBook.chapters.length) showCompareChapter(name, chNum + 1); });
+    if (prev) prev.addEventListener('click', () => { if (chNum > 1) showCompareChapter(displayName, chNum - 1); });
+    if (next) next.addEventListener('click', () => { if (chNum < primaryBook.chapters.length) showCompareChapter(displayName, chNum + 1); });
     const exitBtn = $('#cmpExit');
     if (exitBtn) exitBtn.addEventListener('click', exitCompare);
   }
@@ -933,25 +941,27 @@
 
     function showChapter(name, chNum, targetVerse) {
     currentView = 'chapter';
-    currentBook = name; currentChapter = chNum;
-    setTitle(name + ' ' + chNum + txt('chapter'));
-    showBack(true);
+    setActiveTab('');
     const book = findBook(name);
+    const displayName = displayBookName(book, name);
+    currentBook = displayName; currentChapter = chNum;
+    setTitle(displayName + ' ' + chNum + txt('chapter'));
+    showBack(true);
     if (!book || !book.chapters[chNum-1]) { renderContent('<p style="padding:16px">데이터를 찾을 수 없습니다</p>'); return; }
     const verses = book.chapters[chNum-1];
 
     renderContent(`
       <div class="verse-view">
-        <div class=\"chapter-title\"><span class=\"ct-text\">${name} ${chNum}${txt('chapter')}</span><span class=\"ct-compare\" id=\"btnCompare\" title=\"${currentLang === 'ko' ? '번역본 비교' : 'Compare Translations'}\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\"><use href=\"#i-compare\"/></svg></span></div>
+        <div class=\"chapter-title\"><span class=\"ct-text\">${displayName} ${chNum}${txt('chapter')}</span><span class=\"ct-compare\" id=\"btnCompare\" title=\"${currentLang === 'ko' ? '번역본 비교' : 'Compare Translations'}\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\"><use href=\"#i-compare\"/></svg></span></div>
         ${verses.map((v,i)=>{
           const vn = i+1;
-          const bm = isBookmarked(name, chNum, vn);
-          const hl = getHighlight(name, chNum, vn);
-          const nt = getNote(name, chNum, vn);
+          const bm = isBookmarked(displayName, chNum, vn);
+          const hl = getHighlight(displayName, chNum, vn);
+          const nt = getNote(displayName, chNum, vn);
           const hlCls = hl ? ' hl-' + hl.color : '';
           const bmMark = bm ? '<span class="bm-indicator"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><use href="#i-bookmark"/></svg></span>' : '';
           const ntMark = nt ? '<span class="nt-indicator"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#i-note"/></svg></span>' : '';
-          return `<div class="verse-item${hlCls}" data-v="${vn}" data-book="${name}" data-ch="${chNum}"><span class="vnum">${vn}</span><span class="vtext">${v}</span>${bmMark}${ntMark}</div>`;
+          return `<div class="verse-item${hlCls}" data-v="${vn}" data-book="${displayName}" data-ch="${chNum}"><span class="vnum">${vn}</span><span class="vtext">${v}</span>${bmMark}${ntMark}</div>`;
         }).join('')}
       </div>
         <div class="chapter-nav">
@@ -973,12 +983,12 @@
     const next = $('#nextCh');
     if (prev) {
       prev.addEventListener('click', () => {
-        if (chNum > 1) showChapter(name, chNum - 1);
+        if (chNum > 1) showChapter(displayName, chNum - 1);
       });
     }
     if (next) {
       next.addEventListener('click', () => {
-        if (chNum < book.chapters.length) showChapter(name, chNum + 1);
+        if (chNum < book.chapters.length) showChapter(displayName, chNum + 1);
       });
     }
 
@@ -1151,9 +1161,9 @@
             clearTimeout(tapTimer); tapTimer = null; tapEl = null;
             content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
             el.classList.toggle('selected');
-            history.replaceState(null, '', `#book=${encodeURIComponent(name)}&ch=${chNum}&v=${el.dataset.v}`);
+            history.replaceState(null, '', `#book=${encodeURIComponent(displayName)}&ch=${chNum}&v=${el.dataset.v}`);
             updateActionBar();
-            savePosition(name, chNum, parseInt(el.dataset.v));
+            savePosition(displayName, chNum, parseInt(el.dataset.v));
             return;
           }
           // First tap: wait 300ms to decide single vs double
@@ -1162,8 +1172,8 @@
           tapTimer = setTimeout(() => {
             tapTimer = null; tapEl = null;
             // Single tap: just save position, no action bar
-            savePosition(name, chNum, parseInt(el.dataset.v));
-            history.replaceState(null, '', `#book=${encodeURIComponent(name)}&ch=${chNum}&v=${el.dataset.v}`);
+            savePosition(displayName, chNum, parseInt(el.dataset.v));
+            history.replaceState(null, '', `#book=${encodeURIComponent(displayName)}&ch=${chNum}&v=${el.dataset.v}`);
           }, 300);
         });
 
@@ -1172,7 +1182,7 @@
           lpTimer = setTimeout(() => {
             lpTimer = null;
             const t = el.querySelector('.vtext').textContent;
-            const r = `${name} ${chNum}:${el.dataset.v}`;
+            const r = `${displayName} ${chNum}:${el.dataset.v}`;
             navigator.clipboard.writeText(`${r} ${t}`);
           }, 500);
         }, { passive: true });
@@ -1182,7 +1192,7 @@
         el.addEventListener('contextmenu', e => {
           e.preventDefault();
           const t = el.querySelector('.vtext').textContent;
-          const r = `${name} ${chNum}:${el.dataset.v}`;
+          const r = `${displayName} ${chNum}:${el.dataset.v}`;
           navigator.clipboard.writeText(`${r} ${t}`);
         });
       });
@@ -1201,30 +1211,13 @@
         const contentRect = content.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
         const calculatedScrollTop = elRect.top - contentRect.top + content.scrollTop - 20;
-        
-        console.log('[BibleApp Debug]', {
-          targetVerse,
-          contentScrollTopBefore: content.scrollTop,
-          contentRectTop: contentRect.top,
-          elRectTop: elRect.top,
-          calculatedScrollTop,
-          windowScrollY: window.scrollY
-        });
-        
-        // 방법 1: content.scrollTop 직접 대입
+
         content.scrollTop = calculatedScrollTop;
-        
-        // 방법 2: content.scrollTo 실행
         if (typeof content.scrollTo === 'function') {
           content.scrollTo({ top: calculatedScrollTop, behavior: 'auto' });
         }
-        
-        // 방법 3: 만약 window/body가 스크롤되는 환경일 경우를 대비해 window.scrollTo 실행
-        const bodyRect = document.body.getBoundingClientRect();
         const winScrollTop = window.scrollY + elRect.top - 60; // 60px 헤더 여유
         window.scrollTo({ top: winScrollTop, behavior: 'auto' });
-        
-        console.log('[BibleApp Debug] contentScrollTopAfter:', content.scrollTop);
       }, 300);
     }
 
@@ -1241,9 +1234,9 @@
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
         const book = findBook(name);
         if (dx < 0 && chNum < book.chapters.length) {
-          showChapter(name, chNum + 1);
+          showChapter(displayName, chNum + 1);
         } else if (dx > 0 && chNum > 1) {
-          showChapter(name, chNum - 1);
+          showChapter(displayName, chNum - 1);
         }
       }
     }, { passive: true });
@@ -1499,11 +1492,25 @@
 
       // Try Web Share API first
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: ref });
-          URL.revokeObjectURL(url);
-          return;
-        } catch(e) { if (e.name !== 'AbortError') showToast('공유 실패'); }
+        const shouldShare = window.confirm(
+          currentLang === 'ko'
+            ? '말씀카드 공유 메뉴를 열까요?\n공유 전에 받는 사람을 한 번 더 확인하세요.\n\n취소하면 이미지로 저장합니다.'
+            : 'Open the verse card share menu?\nPlease double-check the recipient before sharing.\n\nCancel will save the image instead.'
+        );
+        if (shouldShare) {
+          try {
+            await navigator.share({ files: [file], title: ref });
+            URL.revokeObjectURL(url);
+            return;
+          } catch(e) {
+            if (e.name === 'AbortError') {
+              showToast(currentLang === 'ko' ? '공유가 취소되었습니다' : 'Share canceled');
+              URL.revokeObjectURL(url);
+              return;
+            }
+            showToast(currentLang === 'ko' ? '공유 실패, 이미지로 저장합니다' : 'Share failed, saving image');
+          }
+        }
       }
 
       // Fallback: download

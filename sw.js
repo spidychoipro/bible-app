@@ -1,4 +1,4 @@
-const CACHE = 'bible-v2';
+const CACHE = 'bible-v7';
 const STATIC = [
   './', './index.html', './app.js', './style.css',
   './fonts/fonts.css', './fonts/Pretendard-Regular.woff2',

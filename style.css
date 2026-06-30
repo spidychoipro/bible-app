@@ -459,7 +459,7 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 
 /* ─── Verse action bar ─── */
 .verse-action-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  position: fixed; bottom: 56px; left: 0; right: 0;
   display: flex; align-items: center; gap: 6px; padding: 8px 10px;
   padding-bottom: max(8px, env(safe-area-inset-bottom));
   background: var(--surface); border-top: 1px solid var(--border);
@@ -467,7 +467,18 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   box-shadow: 0 -2px 12px var(--shadow);
 }
 .verse-action-bar.show { transform: translateY(0); }
-@media (max-width: 767px) { .verse-action-bar { bottom: 54px; } }
+@media (min-width: 768px) {
+  .verse-action-bar {
+    bottom: 72px;
+    left: 50%;
+    right: auto;
+    width: min(720px, calc(100vw - 32px));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transform: translate(-50%, calc(100% + 24px));
+  }
+  .verse-action-bar.show { transform: translate(-50%, 0); }
+}
 .act-btn {
   flex: 1; border-radius: 8px; padding: 8px 4px; gap: 3px;
   font-size: 0.6em; font-weight: 500; white-space: nowrap;
