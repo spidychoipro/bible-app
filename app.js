@@ -226,14 +226,19 @@
     document.documentElement.setAttribute('data-theme', name);
   }
 
-  function getTheme() { return localStorage.getItem(THEME_KEY) || 'light'; }
+  function getTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) return saved;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches) return 'dark';
+    return 'light';
+  }
   function setTheme(name) {
     localStorage.setItem(THEME_KEY, name);
     applyTheme(name);
     updateThemeUI();
   }
 
-  function getFontSize() { return parseInt(localStorage.getItem(FS_KEY)) || 16; }
+  function getFontSize() { return parseInt(localStorage.getItem(FS_KEY)) || 17; }
   function setFontSize(val) {
     val = Math.max(12, Math.min(32, val));
     localStorage.setItem(FS_KEY, val);
@@ -242,7 +247,7 @@
 
   const LH_KEY = 'bibleLineHeight';
   const LS_KEY = 'bibleLetterSpacing';
-  function getLineHeight() { return parseFloat(localStorage.getItem(LH_KEY)) || 1.8; }
+  function getLineHeight() { return parseFloat(localStorage.getItem(LH_KEY)) || 1.9; }
   function setLineHeight(val) {
     val = Math.max(1.2, Math.min(2.4, val));
     localStorage.setItem(LH_KEY, val);
@@ -322,6 +327,10 @@
             하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 저를 믿는 자마다 멸망치 않고 영생을 얻게 하려 하심이니라
           </div>
         </div>
+
+        <div class="section" style="border-top:1px solid var(--border);padding-top:16px">
+          <button id="resetDefaults" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-dim);cursor:pointer;font-size:0.85em">기본값으로 초기화</button>
+        </div>
       </div>
     `;
     settingsOverlay.classList.add('open');
@@ -383,6 +392,21 @@
       lsDisplay.textContent = (v * 100).toFixed(0);
       setLetterSpacing(v);
       if (previewBlock) previewBlock.style.letterSpacing = v + 'em';
+    };
+
+    // Reset to defaults
+    $('#resetDefaults').onclick = () => {
+      localStorage.removeItem(FS_KEY);
+      localStorage.removeItem(LH_KEY);
+      localStorage.removeItem(LS_KEY);
+      localStorage.removeItem(THEME_KEY);
+      localStorage.removeItem('bibleCustomTheme');
+      closeSettings();
+      setFontSize(17);
+      setLineHeight(1.9);
+      setLetterSpacing(0);
+      applyTheme(getTheme());
+      showToast('설정이 기본값으로 초기화되었습니다');
     };
   }
 
@@ -747,7 +771,7 @@
         <span>${verses.length} ${txt('verses')}</span>
       </div>
       <div class="vs-grid">${verses.map((_,i)=>`<button class="vs-item" data-v="${i+1}">${i+1}</button>`).join('')}</div>
-      <button class="deselect-btn" id="deselectVerse">${currentLang === 'ko' ? '선택 안함' : 'Deselect'}</button>
+      <button class="deselect-btn" id="deselectVerse">${currentLang === 'ko' ? '취소' : 'Cancel'}</button>
     `);
     content.querySelectorAll('.vs-item').forEach(btn => {
       btn.addEventListener('click', function() {
