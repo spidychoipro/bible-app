@@ -972,9 +972,9 @@
       const bmkBtn = document.getElementById('actBookmark');
       bmkBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-bookmark${isBookmarked(book, ch, v) ? '' : '-outline'}"/></svg> ${currentLang === 'ko' ? '북마크' : 'Bookmark'}`;
       const hl = getHighlight(book, ch, v);
-      document.getElementById('actHighlight').style.opacity = hl ? '1' : '0.5';
+      document.getElementById('actHighlight').classList.toggle('has-data', !!hl);
       const nt = getNote(book, ch, v);
-      document.getElementById('actNote').style.opacity = nt ? '1' : '0.5';
+      document.getElementById('actNote').classList.toggle('has-data', !!nt);
     }
 
       /* ─── Single tap / Double tap / Long press ─── */
