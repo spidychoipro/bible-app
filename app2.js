@@ -1,7 +1,18 @@
 (() => {
   'use strict';
 
-  const DATA_URL = 'data/bible.json?v=2';
+  const TRANS_KEY = 'bibleTranslation';
+  const TRANSLATIONS = [
+    { id: 'kjv', label: '개역한글', lang: 'ko' },
+    { id: 'krv', label: '개역개정', lang: 'ko' },
+    { id: 'nks', label: '새번역', lang: 'ko' },
+    { id: 'nhk', label: '새한글', lang: 'ko' },
+    { id: 'msg', label: 'The Message', lang: 'en' },
+    { id: 'nas', label: 'NASB 2020', lang: 'en' },
+    { id: 'niv', label: 'NIV 2011', lang: 'en' },
+  ];
+  let currentTranslation = localStorage.getItem(TRANS_KEY) || 'kjv';
+  let currentLang = TRANSLATIONS.find(t => t.id === currentTranslation)?.lang || 'ko';
   let bible = [];
   let currentView = 'home';
   let currentTestament = 'ot';
@@ -29,6 +40,31 @@
   const enNames = Object.fromEntries(Object.entries(koNames).map(([k,v])=>[v,k]));
   const otOrder = ["창세기","출애굽기","레위기","민수기","신명기","여호수아","사사기","룻기","사무엘상","사무엘하","열왕기상","열왕기하","역대상","역대하","에스라","느헤미야","에스더","욥기","시편","잠언","전도서","아가","이사야","예레미야","예레미야애가","에스겔","다니엘","호세아","요엘","아모스","오바댜","요나","미가","나훔","하박국","스바냐","학개","스가랴","말라기"];
   const ntOrder = ["마태복음","마가복음","누가복음","요한복음","사도행전","로마서","고린도전서","고린도후서","갈라디아서","에베소서","빌립보서","골로새서","데살로니가전서","데살로니가후서","디모데전서","디모데후서","디도서","빌레몬서","히브리서","야고보서","베드로전서","베드로후서","요한일서","요한이서","요한삼서","유다서","요한계시록"];
+  const enOtOrder = Object.keys(koNames).slice(0, 39);
+  const enNtOrder = Object.keys(koNames).slice(39);
+  function getOrder(testament) {
+    if (currentLang === 'ko') return testament === 'ot' ? otOrder : ntOrder;
+    return testament === 'ot' ? enOtOrder : enNtOrder;
+  }
+  function txt(key) {
+    const map = {
+      chapter: { ko:'장', en:'' }, chapters: { ko:'장', en:'chapters' },
+      verse: { ko:'절', en:'' }, verses: { ko:'절', en:'verses' },
+      total: { ko:'총', en:'' }, chapNav: { ko:'장', en:'' },
+      prev: { ko:'이전 장', en:'← Prev' }, next: { ko:'다음 장', en:'Next →' },
+      searchTitle: { ko:'검색 결과', en:'Search Results' },
+      noResult: { ko:'검색 결과가 없습니다', en:'No results found' },
+      tooMany: { ko:'결과가 너무 많습니다. 더 구체적으로 검색해보세요.', en:'Too many results. Be more specific.' },
+      loading: { ko:'성경 데이터를 불러오는 중...', en:'Loading Bible data...' },
+      loadFail: { ko:'데이터를 불러오는데 실패했습니다', en:'Failed to load data' },
+      error: { ko:'오류 발생', en:'Error' },
+      retry: { ko:'다시 시도', en:'Retry' },
+      home: { ko:'성경', en:'Bible' },
+      myStuff: { ko:'내 자료', en:'My Stuff' },
+      settings: { ko:'설정', en:'Settings' },
+    };
+    return (map[key] && map[key][currentLang]) || map[key]?.ko || key;
+  }
 
   const $ = s => document.querySelector(s);
   const $$ = s => document.querySelectorAll(s);
@@ -333,59 +369,72 @@
     return true;
   };
 
-  async function init() {
-    loading.textContent = '성경 데이터를 불러오는 중...';
+  async function loadBibleData(transId) {
+    loading.classList.remove('hide');
+    loading.textContent = txt('loading');
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const resp = await fetch(DATA_URL, { signal: ctrl.signal });
+      const url = 'data/bible-' + transId + '.json?v=2';
+      const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
+      currentTranslation = transId;
+      currentLang = TRANSLATIONS.find(t => t.id === transId)?.lang || 'ko';
+      localStorage.setItem(TRANS_KEY, transId);
       clearTimeout(timeout);
       loading.classList.add('hide');
-      // 새로고침(reload) 시 해시를 비우고 홈 화면으로 이동 (Option 2)
-      let isReload = false;
-      try {
-        const navs = performance.getEntriesByType('navigation');
-        if (navs && navs.length > 0) {
-          isReload = navs[0].type === 'reload';
-        } else {
-          isReload = performance.navigation.type === 1;
-        }
-      } catch (e) {}
-
-      if (isReload) {
-        if (location.hash) {
-          history.replaceState(null, '', location.pathname + location.search);
-        }
-        showHome();
-      } else {
-        handleHash();
-      }
+      return true;
     } catch(e) {
       clearTimeout(timeout);
-      loading.innerHTML = '데이터를 불러오는데 실패했습니다<br><small>' + e.message + '<br>인터넷 연결을 확인하거나 페이지를 새로고침해주세요</small>';
+      loading.innerHTML = txt('loadFail') + '<br><small>' + e.message + '<br><br><a href="?reset=' + Date.now() + '" style="color:#fff">' + txt('retry') + '</a></small>';
       console.error(e);
+      return false;
     }
   }
 
-  function findBook(koName) {
-    const en = enNames[koName];
-    return bible.find(b => b.name === en);
+  async function init() {
+    const ok = await loadBibleData(currentTranslation);
+    if (!ok) return;
+    let isReload = false;
+    try {
+      const navs = performance.getEntriesByType('navigation');
+      if (navs && navs.length > 0) isReload = navs[0].type === 'reload';
+      else isReload = performance.navigation.type === 1;
+    } catch (e) {}
+    if (isReload) {
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+      showHome();
+    } else handleHash();
+  }
+
+  function findBook(name) {
+    if (currentLang === 'ko') {
+      const en = enNames[name];
+      return bible.find(b => b.name === en);
+    }
+    return bible.find(b => b.name === name);
   }
 
   function showHome() {
     currentView = 'home';
     currentBook = null; currentChapter = null;
-    setTitle('성경');
+    setTitle(txt('home'));
     showBack(false);
+    const curTrans = TRANSLATIONS.find(t => t.id === currentTranslation);
     content.innerHTML = `
+      <div class="trans-bar" id="transBar">
+        <span class="trans-label">📖</span>
+        <span class="trans-name" id="transName">${curTrans ? curTrans.label : '??'}</span>
+        <span class="trans-arrow">▾</span>
+      </div>
       <div class="testament-tabs">
-        <button class="active" data-t="ot">구약</button>
-        <button data-t="nt">신약</button>
+        <button class="active" data-t="ot">${currentLang === 'ko' ? '구약' : 'OT'}</button>
+        <button data-t="nt">${currentLang === 'ko' ? '신약' : 'NT'}</button>
       </div>
       <div class="book-list" id="bookList"></div>
     `;
+    document.getElementById('transBar').addEventListener('click', showTranslationPicker);
     const tabs = $$('.testament-tabs button');
     tabs.forEach(t => t.addEventListener('click', () => {
       tabs.forEach(x=>x.classList.remove('active'));
@@ -398,93 +447,129 @@
 
   function renderBooks(testament) {
     const list = $('#bookList');
-    const order = testament === 'ot' ? otOrder : ntOrder;
-    list.innerHTML = order.map(ko => {
-      const book = findBook(ko);
+    const names = getOrder(testament);
+    list.innerHTML = names.map(n => {
+      const book = findBook(n);
       const chapters = book ? book.chapters.length : 0;
-      return `<div class="book-item" data-book="${ko}"><div>${ko}</div><div class="badge">${chapters}장</div></div>`;
+      const badge = currentLang === 'ko' ? chapters + '장' : '' + chapters;
+      return `<div class="book-item" data-book="${n}"><div>${n}</div><div class="badge">${badge}</div></div>`;
     }).join('');
     list.querySelectorAll('.book-item').forEach(el => {
       el.addEventListener('click', () => showBook(el.dataset.book));
     });
   }
 
-  function showBook(koName) {
+  function showTranslationPicker() {
+    let overlay = document.getElementById('transOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'transOverlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:45;display:none;align-items:center;justify-content:center';
+      overlay.innerHTML = '<div style="background:var(--surface);width:90%;max-width:360px;border-radius:14px;padding:20px;box-shadow:0 4px 24px var(--shadow);max-height:70vh;overflow-y:auto">'
+        + '<h3 style="font-size:1em;margin-bottom:12px;color:var(--text)">📖 ' + (currentLang === 'ko' ? '번역 선택' : 'Select Translation') + '</h3>'
+        + '<div id="transList"></div>'
+        + '<button id="transClose" style="width:100%;margin-top:12px;padding:10px;border:none;border-radius:8px;background:var(--hover);color:var(--text);cursor:pointer;font-size:0.85em">'
+        + (currentLang === 'ko' ? '닫기' : 'Close') + '</button></div>';
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.style.display = 'none'; });
+      document.getElementById('transClose').addEventListener('click', () => overlay.style.display = 'none');
+    }
+    const list = document.getElementById('transList');
+    list.innerHTML = TRANSLATIONS.map(t =>
+      '<div class="trans-item' + (t.id === currentTranslation ? ' active' : '') + '" data-id="' + t.id + '" style="padding:12px 14px;border-radius:8px;cursor:pointer;margin-bottom:4px;transition:all 0.15s;display:flex;align-items:center;gap:10px;' + (t.id === currentTranslation ? 'background:var(--accent);color:#fff;font-weight:600' : 'background:var(--hover);color:var(--text)') + '">'
+      + '<span style="font-size:1.1em">' + (t.lang === 'ko' ? '🇰🇷' : '🇺🇸') + '</span>'
+      + '<span>' + t.label + '</span>'
+      + (t.id === currentTranslation ? '<span style="margin-left:auto">✓</span>' : '')
+      + '</div>'
+    ).join('');
+    list.querySelectorAll('.trans-item').forEach(el => {
+      el.addEventListener('click', async () => {
+        const id = el.dataset.id;
+        if (id === currentTranslation) { overlay.style.display = 'none'; return; }
+        overlay.style.display = 'none';
+        const ok = await loadBibleData(id);
+        if (ok) showHome();
+      });
+    });
+    overlay.style.display = 'flex';
+  }
+
+  function showBook(name) {
     currentView = 'book';
-    currentBook = koName; currentChapter = null;
-    setTitle(koName);
+    currentBook = name; currentChapter = null;
+    setTitle(name);
     showBack(true);
-    const book = findBook(koName);
+    const book = findBook(name);
     if (!book) { content.innerHTML='<p style="padding:16px">데이터를 찾을 수 없습니다</p>'; return; }
     const total = book.chapters.reduce((a,c)=>a+c.length,0);
     content.innerHTML = `
       <div class="info-bar">
-        <span>총 ${book.chapters.length}장</span>
-        <span>${total}절</span>
+        <span>${book.chapters.length} ${txt('chapters')}</span>
+        <span>${total} ${txt('verses')}</span>
       </div>
-      <div class="chapter-grid">${book.chapters.map((_,i)=>`<div class="chapter-item" data-ch="${i+1}">${i+1}장</div>`).join('')}</div>
+      <div class="chapter-grid">${book.chapters.map((_,i)=>`<div class="chapter-item" data-ch="${i+1}">${i+1}${txt('chapter')}</div>`).join('')}</div>
       <div id="verseGrid" style="display:none"></div>
     `;
 
     content.querySelectorAll('.chapter-item').forEach(el => {
-      el.addEventListener('click', () => showChapterVerses(koName, parseInt(el.dataset.ch)));
+      el.addEventListener('click', () => showChapterVerses(name, parseInt(el.dataset.ch)));
     });
   }
 
-  function showChapterVerses(koName, chNum) {
+  function showChapterVerses(name, chNum) {
     currentView = 'verse';
-    currentBook = koName; currentChapter = chNum;
-    setTitle(`${koName} ${chNum}장`);
+    currentBook = name; currentChapter = chNum;
+    setTitle(name + ' ' + chNum + txt('chapter'));
     showBack(true);
-    const book = findBook(koName);
-    if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">장을 찾을 수 없습니다</p>'; return; }
+    const book = findBook(name);
+    if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">데이터를 찾을 수 없습니다</p>'; return; }
     const verses = book.chapters[chNum-1];
     content.innerHTML = `
       <div class="info-bar">
-        <span>${koName} ${chNum}장</span>
-        <span>${verses.length}절</span>
+        <span>${name} ${chNum}${txt('chapter')}</span>
+        <span>${verses.length} ${txt('verses')}</span>
       </div>
       <div class="vs-grid">${verses.map((_,i)=>`<button class="vs-item" data-v="${i+1}">${i+1}</button>`).join('')}</div>
-      <button class="deselect-btn" id="deselectVerse">선택 안함</button>
+      <button class="deselect-btn" id="deselectVerse">${currentLang === 'ko' ? '선택 안함' : 'Deselect'}</button>
     `;
     content.querySelectorAll('.vs-item').forEach(btn => {
       btn.addEventListener('click', function() {
-        showChapter(koName, chNum, parseInt(this.dataset.v));
+        showChapter(name, chNum, parseInt(this.dataset.v));
       });
     });
     const ds = $('#deselectVerse');
-    if (ds) ds.addEventListener('click', () => showChapter(koName, chNum));
+    if (ds) ds.addEventListener('click', () => showChapter(name, chNum));
   }
 
-  function showChapter(koName, chNum, targetVerse) {
+  function showChapter(name, chNum, targetVerse) {
     currentView = 'chapter';
-    currentBook = koName; currentChapter = chNum;
-    setTitle(`${koName} ${chNum}장`);
+    currentBook = name; currentChapter = chNum;
+    setTitle(name + ' ' + chNum + txt('chapter'));
     showBack(true);
-    const book = findBook(koName);
-    if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">장을 찾을 수 없습니다</p>'; return; }
+    const book = findBook(name);
+    if (!book || !book.chapters[chNum-1]) { content.innerHTML='<p style="padding:16px">데이터를 찾을 수 없습니다</p>'; return; }
     const verses = book.chapters[chNum-1];
 
     content.innerHTML = `
       <div class="verse-view">
-        <div class="chapter-title">${koName} ${chNum}장</div>
+        <div class="chapter-title">${name} ${chNum}${txt('chapter')}</div>
         ${verses.map((v,i)=>{
           const vn = i+1;
-          const bm = isBookmarked(koName, chNum, vn);
-          const hl = getHighlight(koName, chNum, vn);
-          const nt = getNote(koName, chNum, vn);
+          const bm = isBookmarked(name, chNum, vn);
+          const hl = getHighlight(name, chNum, vn);
+          const nt = getNote(name, chNum, vn);
           const hlCls = hl ? ' hl-' + hl.color : '';
           const bmMark = bm ? '<span class="bm-indicator">★</span>' : '';
           const ntMark = nt ? '<span class="nt-indicator">📝</span>' : '';
-          return `<div class="verse-item${hlCls}" data-v="${vn}" data-book="${koName}" data-ch="${chNum}"><span class="vnum">${vn}</span><span class="vtext">${v}</span>${bmMark}${ntMark}</div>`;
+          return `<div class="verse-item${hlCls}" data-v="${vn}" data-book="${name}" data-ch="${chNum}"><span class="vnum">${vn}</span><span class="vtext">${v}</span>${bmMark}${ntMark}</div>`;
         }).join('')}
       </div>
         <div class="chapter-nav">
           <button id="prevCh" class="${chNum > 1 ? '' : 'hidden'}">
-            <span class="arrow">←</span> <span>이전 장</span>
+            <span class="arrow">←</span> <span>${txt('prev')}</span>
           </button>
           <button id="nextCh" class="${chNum < book.chapters.length ? '' : 'hidden'}">
-            <span>다음 장</span> <span class="arrow">→</span>
+            <span>${txt('next')}</span> <span class="arrow">→</span>
           </button>
         </div>
       </div>
@@ -498,12 +583,12 @@
     const next = $('#nextCh');
     if (prev) {
       prev.addEventListener('click', () => {
-        if (chNum > 1) showChapter(koName, chNum - 1);
+        if (chNum > 1) showChapter(name, chNum - 1);
       });
     }
     if (next) {
       next.addEventListener('click', () => {
-        if (chNum < book.chapters.length) showChapter(koName, chNum + 1);
+        if (chNum < book.chapters.length) showChapter(name, chNum + 1);
       });
     }
 
@@ -626,9 +711,9 @@
         el.addEventListener('click', () => {
           content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
           el.classList.toggle('selected');
-          history.replaceState(null, '', `#book=${encodeURIComponent(koName)}&ch=${chNum}&v=${el.dataset.v}`);
+          history.replaceState(null, '', `#book=${encodeURIComponent(name)}&ch=${chNum}&v=${el.dataset.v}`);
           updateActionBar();
-          savePosition(koName, chNum, parseInt(el.dataset.v));
+          savePosition(name, chNum, parseInt(el.dataset.v));
         });
       });
 
@@ -642,9 +727,7 @@
         }
         content.querySelectorAll('.verse-item.selected').forEach(x => x.classList.remove('selected'));
         el.classList.add('selected');
-        updateCopyBtn();
-        
-        // 디버깅을 위한 콘솔 로그 추가
+        updateActionBar();
         const contentRect = content.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
         const calculatedScrollTop = elRect.top - contentRect.top + content.scrollTop - 20;
@@ -686,11 +769,11 @@
       const dx = t.screenX - touchStartX;
       const dy = t.screenY - touchStartY;
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        const book = findBook(koName);
+        const book = findBook(name);
         if (dx < 0 && chNum < book.chapters.length) {
-          showChapter(koName, chNum + 1);
+          showChapter(name, chNum + 1);
         } else if (dx > 0 && chNum > 1) {
-          showChapter(koName, chNum - 1);
+          showChapter(name, chNum - 1);
         }
       }
     }, { passive: true });
@@ -760,7 +843,7 @@
   /* ─── My Stuff view ─── */
   function showMyStuff() {
     currentView = 'mystuff';
-    setTitle('내 자료');
+    setTitle(txt('myStuff'));
     showBack(true);
     content.innerHTML = `
       <div class="my-stuff-tabs">
@@ -857,38 +940,38 @@
     query = query.trim();
     if (!query) return;
     currentView = 'search';
-    setTitle('검색 결과');
+    setTitle(txt('searchTitle'));
     showBack(true);
     searchBar.style.display='none';
 
     const results = [];
     const lower = query.toLowerCase();
     for (const book of bible) {
-      const ko = koNames[book.name];
+      const displayName = currentLang === 'ko' ? (koNames[book.name] || book.name) : book.name;
       book.chapters.forEach((ch, ci) => {
         ch.forEach((v, vi) => {
           if (v.toLowerCase().includes(lower)) {
-            results.push({ book:ko, ch:ci+1, v:vi+1, text:v });
+            results.push({ book:displayName, ch:ci+1, v:vi+1, text:v });
           }
         });
       });
     }
 
     if (results.length === 0) {
-      content.innerHTML = `<div class="search-results"><p style="text-align:center;padding:40px;color:var(--text-dim)">'${query}' 검색 결과가 없습니다</p></div>`;
+      content.innerHTML = `<div class="search-results"><p style="text-align:center;padding:40px;color:var(--text-dim)">'${query}' ${txt('noResult')}</p></div>`;
       return;
     }
 
     content.innerHTML = `
       <div class="search-results">
-        <div class="result-count">'${query}' 검색 결과 ${results.length}건</div>
+        <div class="result-count">'${query}' ${results.length} ${currentLang === 'ko' ? '건' : 'results'}</div>
         ${results.slice(0, 200).map(r => `
           <div class="search-item" data-book="${r.book}" data-ch="${r.ch}" data-v="${r.v}">
             <div class="ref">${r.book} ${r.ch}:${r.v}</div>
             <div class="text">${highlightText(r.text, query)}</div>
           </div>
         `).join('')}
-        ${results.length>200 ? '<p style="text-align:center;color:var(--text-dim);padding:12px">결과가 너무 많습니다. 더 구체적으로 검색해보세요.</p>' : ''}
+        ${results.length>200 ? '<p style="text-align:center;color:var(--text-dim);padding:12px">' + txt('tooMany') + '</p>' : ''}
       </div>
     `;
     content.querySelectorAll('.search-item').forEach(el => {

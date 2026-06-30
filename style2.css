@@ -499,6 +499,22 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 .verse-item.selected.hl-blue,
 .verse-item.selected.hl-pink { background: var(--accent); }
 
+/* ─── Translation bar ─── */
+.trans-bar {
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none; transition: background 0.15s;
+}
+.trans-bar:hover { background: var(--hover); }
+.trans-bar .trans-label { font-size: 0.85em; }
+.trans-bar .trans-name {
+  font-size: 0.85em; font-weight: 600; color: var(--accent); flex: 1;
+}
+.trans-bar .trans-arrow { font-size: 0.75em; color: var(--text-dim); }
+
+/* ─── Translation picker ─── */
+.trans-item:hover { filter: brightness(0.95); }
+
 /* ─── Highlight color picker popup ─── */
 .hl-picker {
   display: none; position: fixed; bottom: 70px; left: 50%;
