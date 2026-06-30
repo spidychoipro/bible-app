@@ -946,9 +946,7 @@
         const vn = sel.dataset.v;
         const text = sel.querySelector('.vtext').textContent;
         const ref = `${currentBook} ${currentChapter}:${vn}`;
-        navigator.clipboard.writeText(`${ref} ${text}`).then(() => {
-          showToast('복사되었습니다');
-        }).catch(() => {
+        navigator.clipboard.writeText(`${ref} ${text}`).catch(() => {
           showToast('복사 실패');
         });
       });
@@ -1012,7 +1010,7 @@
             lpTimer = null;
             const t = el.querySelector('.vtext').textContent;
             const r = `${name} ${chNum}:${el.dataset.v}`;
-            navigator.clipboard.writeText(`${r} ${t}`).then(() => showToast('복사되었습니다'));
+            navigator.clipboard.writeText(`${r} ${t}`);
           }, 500);
         }, { passive: true });
         el.addEventListener('touchend', () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } }, { passive: true });
@@ -1022,7 +1020,7 @@
           e.preventDefault();
           const t = el.querySelector('.vtext').textContent;
           const r = `${name} ${chNum}:${el.dataset.v}`;
-          navigator.clipboard.writeText(`${r} ${t}`).then(() => showToast('복사되었습니다'));
+          navigator.clipboard.writeText(`${r} ${t}`);
         });
       });
 
