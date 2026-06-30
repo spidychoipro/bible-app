@@ -266,7 +266,7 @@
 
     settingsOverlay.innerHTML = `
       <div id="settingsPanel">
-        <button class="close-settings" id="closeSettings">✕</button>
+        <button class="close-settings" id="closeSettings"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#i-close"/></svg></button>
         <h2>설정</h2>
 
         <div class="section">
@@ -452,9 +452,9 @@
         </div>
         <div id="svResults"></div>
       </div>`);
+    setupSearchInput('svInput');
     const input = document.getElementById('svInput');
-    input.focus();
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(input.value); });
+    if (input) input.focus();
   }
 
   function goBack() {
@@ -1465,6 +1465,11 @@
     });
   }
 
+  function setupSearchInput(id) {
+    const input = document.getElementById(id);
+    if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(input.value); });
+  }
+
   function doSearch(query) {
     query = query.trim();
     if (!query) return;
@@ -1485,23 +1490,28 @@
       });
     }
 
+    const searchBar = `<div class="sv-bar"><input type="text" class="sv-input" id="svInput2" value="${escHtml(query)}" autocomplete="off"></div>`;
     if (results.length === 0) {
-      renderContent(`<div class="search-results"><p style="text-align:center;padding:40px;color:var(--text-dim)">'${query}' ${txt('noResult')}</p></div>`);
+      renderContent(`<div class="search-view">${searchBar}<div class="search-results"><p style="text-align:center;padding:40px;color:var(--text-dim)">'${query}' ${txt('noResult')}</p></div></div>`);
+      setupSearchInput('svInput2');
       return;
     }
 
     renderContent(`
-      <div class="search-results">
-        <div class="result-count">'${query}' ${results.length} ${currentLang === 'ko' ? '건' : 'results'}</div>
-        ${results.slice(0, 200).map(r => `
-          <div class="search-item" data-book="${r.book}" data-ch="${r.ch}" data-v="${r.v}">
-            <div class="ref">${r.book} ${r.ch}:${r.v}</div>
-            <div class="text">${highlightText(r.text, query)}</div>
-          </div>
-        `).join('')}
-        ${results.length>200 ? '<p style="text-align:center;color:var(--text-dim);padding:12px">' + txt('tooMany') + '</p>' : ''}
+      <div class="search-view">${searchBar}
+        <div class="search-results">
+          <div class="result-count">'${query}' ${results.length} ${currentLang === 'ko' ? '건' : 'results'}</div>
+          ${results.slice(0, 200).map(r => `
+            <div class="search-item" data-book="${r.book}" data-ch="${r.ch}" data-v="${r.v}">
+              <div class="ref">${r.book} ${r.ch}:${r.v}</div>
+              <div class="text">${highlightText(r.text, query)}</div>
+            </div>
+          `).join('')}
+          ${results.length>200 ? '<p style="text-align:center;color:var(--text-dim);padding:12px">' + txt('tooMany') + '</p>' : ''}
+        </div>
       </div>
     `);
+    setupSearchInput('svInput2');
     content.querySelectorAll('.search-item').forEach(el => {
       el.addEventListener('click', () => {
         showChapter(el.dataset.book, parseInt(el.dataset.ch), parseInt(el.dataset.v));
@@ -1531,6 +1541,10 @@
 
   window.addEventListener('hashchange', handleHash);
   window.addEventListener('popstate', handleHash);
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
 
   init();
 })();

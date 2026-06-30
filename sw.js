@@ -1,8 +1,9 @@
-const CACHE = 'bible-v1';
+const CACHE = 'bible-v2';
 const STATIC = [
   './', './index.html', './app.js', './style.css',
   './fonts/fonts.css', './fonts/Pretendard-Regular.woff2',
-  './fonts/Pretendard-SemiBold.woff2', './fonts/Pretendard-Bold.woff2'
+  './fonts/Pretendard-SemiBold.woff2', './fonts/Pretendard-Bold.woff2',
+  './icon.svg', './manifest.json'
 ];
 
 self.addEventListener('install', e => {
@@ -21,12 +22,16 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Bible data (bible-*.json): network-first, fallback to cache
+  // Bible data (bible-*.json): cache-first, background refresh
   if (url.pathname.includes('/data/bible-')) {
     e.respondWith(
-      fetch(e.request)
-        .then(res => caches.open(CACHE).then(c => { c.put(e.request, res.clone()); return res; }))
-        .catch(() => caches.match(e.request))
+      caches.match(e.request).then(cached => {
+        const fetchPromise = fetch(e.request).then(res => {
+          if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          return res;
+        }).catch(() => cached);
+        return cached || fetchPromise;
+      })
     );
     return;
   }

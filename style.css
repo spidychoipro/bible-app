@@ -5,7 +5,7 @@
   --bg: #f5f0e8;
   --surface: #fff;
   --text: #1a1a1a;
-  --text-dim: #888;
+  --text-dim: #666;
   --accent: #8b4513;
   --accent-light: #a0522d;
   --border: #ddd;
@@ -39,7 +39,7 @@
   --bg: #f4ecd8;
   --surface: #faf3e0;
   --text: #3b2f1e;
-  --text-dim: #7a6b52;
+  --text-dim: #5a4a32;
   --accent: #8b4513;
   --accent-light: #a0522d;
   --border: #d4c5a9;
@@ -56,7 +56,7 @@
   --bg: #e8f0e0;
   --surface: #f0f8ea;
   --text: #1a3a1a;
-  --text-dim: #5a7a5a;
+  --text-dim: #3a5a3a;
   --accent: #2d6a2d;
   --accent-light: #3a8a3a;
   --border: #b8d4b0;
@@ -92,9 +92,9 @@ body {
   font-family: 'Pretendard', -apple-system, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   background: var(--bg);
   color: var(--text);
-  line-height: var(--lh, 1.8); letter-spacing: var(--ls, 0em);
+  line-height: var(--lh, 1.9); letter-spacing: var(--ls, 0em);
   overscroll-behavior: none;
-  font-size: var(--fs, 16px);
+  font-size: var(--fs, 17px);
   transition: background 0.3s, color 0.3s;
 }
 #app {
@@ -237,12 +237,13 @@ main {
 .chapter-item:hover { background: var(--accent); color: #fff; }
 
 /* Verse view */
-.verse-view { padding: 14px; padding-bottom: 40px; }
-@media (min-width: 600px) { .verse-view { padding: 20px 32px; padding-bottom: 48px; } }
-@media (min-width: 1024px) { .verse-view { padding: 24px 48px; padding-bottom: 56px; } }
+.verse-view { padding: 14px; padding-bottom: 48px; max-width: 720px; margin: 0 auto; }
+@media (min-width: 600px) { .verse-view { padding: 20px 40px; padding-bottom: 56px; } }
+@media (min-width: 1024px) { .verse-view { padding: 28px 56px; padding-bottom: 64px; } }
 .verse-view .chapter-title {
-  font-size: 1.2em; font-weight: 700; color: var(--accent);
-  text-align: center; padding: 12px 0 8px; cursor: pointer; user-select: none;
+  font-size: 1.25em; font-weight: 700; color: var(--accent);
+  text-align: center; padding: 12px 0 12px; cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border); margin-bottom: 12px;
 }
 .verse-view .chapter-title:hover { opacity: 0.8; }
 .vs-grid {
@@ -260,14 +261,14 @@ main {
 .vs-item:hover { background: var(--accent); color: #fff; }
 .vs-item.selected { background: var(--accent); color: #fff; }
 .verse-item {
-  padding: 6px 12px; border-radius: 6px; margin-bottom: 2px;
+  padding: 10px 16px; border-radius: 8px; margin-bottom: 4px;
   transition: background 0.15s; cursor: pointer; position: relative;
 }
 .verse-item:hover { background: var(--verse-hover); }
 .verse-item .vnum {
   display: inline-block; font-size: 0.7em; font-weight: 700; color: var(--verse-num);
-  min-width: 2.2em; vertical-align: top; margin-top: 0.15em;
-  user-select: none;
+  min-width: 2.4em; vertical-align: top; margin-top: 0.1em;
+  background: var(--verse-hover); border-radius: 4px; padding: 1px 6px; text-align: center;
 }
 .verse-item .vtext { display: inline; }
 .verse-item.selected {

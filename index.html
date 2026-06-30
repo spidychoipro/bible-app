@@ -2,17 +2,23 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1a1a2e">
+<meta name="description" content="성경 읽기 앱 - 7개 번역, 1년 1독, 말씀카드, 하이라이트, 메모">
 <title>성경 읽기</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
+<link rel="preload" href="fonts/Pretendard-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Pretendard-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Pretendard-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts/fonts.css">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=2" media="print" onload="this.media='all';this.onload=null">
+<noscript><link rel="stylesheet" href="style.css?v=2"></noscript>
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>:root{--bg:#1a1a2e;--surface:#16213e;--text:#e0e0e0;--text-dim:#8892a4;--accent:#e6b17e;--border:#2a2a4a;--hover:rgba(255,255,255,0.06);--shadow:rgba(0,0,0,0.3)}*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Pretendard',sans-serif;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}#app{display:flex;flex-direction:column;height:100%;max-width:100%;margin:0 auto}header{display:flex;align-items:center;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);min-height:48px;flex-shrink:0;gap:6px;position:sticky;top:0;z-index:10}header h1{font-size:1em;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tabBar{display:flex;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;padding:4px 0 env(safe-area-inset-bottom,4px) 0;position:sticky;bottom:0;z-index:10}#tabBar .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;border:none;background:none;color:var(--text-dim);cursor:pointer;font-size:0.65em;transition:color .15s}#tabBar .tab-btn.active{color:var(--accent)}#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}#loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:.9em;position:absolute;top:0;left:0;right:0;bottom:0;z-index:5;background:var(--bg);transition:opacity .3s}#loading.hide{opacity:0;pointer-events:none}#offlineBanner{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:6px 16px;border-radius:20px;font-size:.75em;z-index:100;display:none;white-space:nowrap}@media(prefers-color-scheme:light){:root{--bg:#f5f0e8;--surface:#ffffff;--text:#1a1a1a;--text-dim:#888;--accent:#8b4513;--border:#e0d8cc;--hover:rgba(0,0,0,0.04);--shadow:rgba(0,0,0,0.08)}}</style>
 </head>
 <body>
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
@@ -69,6 +75,6 @@ setTimeout(function(){
   }
 }, 8000);
 </script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=2" defer></script>
 </body>
 </html>
