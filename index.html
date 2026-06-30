@@ -8,7 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
     <link rel="stylesheet" href="fonts/fonts.css">
-    <link rel="stylesheet" href="style2.css?v=4">
+    <link rel="stylesheet" href="style.css?v=1">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -32,14 +32,6 @@
 </div>
 <div id="settingsOverlay"></div>
 <script>
-// 방문할 때마다 캐시 + SW 정리
-if ('caches' in self) { caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }).catch(function(){}); }
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(regs){
-    Promise.all(regs.map(function(r){ return r.unregister(); }));
-  }).catch(function(){});
-}
-// 5초 후에도 loading이 안 사라지면 오류 메시지 표시
 setTimeout(function(){
   var el = document.getElementById('loading');
   if (el && !el.classList.contains('hide')) {
@@ -47,6 +39,6 @@ setTimeout(function(){
   }
 }, 8000);
 </script>
-<script src="app2.js?v=8"></script>
+<script src="app.js?v=1"></script>
 </body>
 </html>

@@ -1,7 +1,40 @@
-self.addEventListener('install', function() { self.skipWaiting(); });
-self.addEventListener('activate', function(e) {
+const CACHE = 'bible-v1';
+const STATIC = [
+  './', './index.html', './app.js', './style.css',
+  './fonts/fonts.css', './fonts/Pretendard-Regular.woff2',
+  './fonts/Pretendard-SemiBold.woff2', './fonts/Pretendard-Bold.woff2'
+];
+
+self.addEventListener('install', e => {
   e.waitUntil(
-    caches.keys().then(function(keys) { return Promise.all(keys.map(function(k) { return caches.delete(k); })); })
-    .then(function() { return self.clients.claim(); })
+    caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+    )).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  // Bible data (bible-*.json): network-first, fallback to cache
+  if (url.pathname.includes('/data/bible-')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => caches.open(CACHE).then(c => { c.put(e.request, res.clone()); return res; }))
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+  // Static assets: cache-first
+  e.respondWith(
+    caches.match(e.request).then(res => res || fetch(e.request).then(r => {
+      if (r.ok) caches.open(CACHE).then(c => c.put(e.request, r.clone()));
+      return r;
+    }))
   );
 });
