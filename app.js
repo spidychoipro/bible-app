@@ -261,7 +261,9 @@
   }
 
   /* ─── Settings UI ─── */
+  let prevTab = 'home';
   function openSettings() {
+    prevTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'home';
     setActiveTab('settings');
     const theme = getTheme();
     const fs = getFontSize();
@@ -410,7 +412,7 @@
     };
   }
 
-  function closeSettings() { settingsOverlay.classList.remove('open'); settingsOverlay.innerHTML = ''; }
+  function closeSettings() { settingsOverlay.classList.remove('open'); settingsOverlay.innerHTML = ''; setActiveTab(prevTab); }
 
   function updateThemeUI() {
     // Theme icon update not needed (no header settings button)

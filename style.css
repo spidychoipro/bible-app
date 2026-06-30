@@ -185,8 +185,8 @@ main {
 
 /* Book list */
 .book-list {
-  display: grid; gap: 8px; padding: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(140px,1fr));
+  display: grid; gap: 8px; padding: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
 }
 @media (min-width: 600px) {
   .book-list { grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); padding: 20px; gap: 10px; }
@@ -223,16 +223,17 @@ main {
 
 /* Chapter grid */
 .chapter-grid {
-  display: grid; gap: 8px; padding: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(48px,1fr));
+  display: grid; gap: 6px; padding: 10px;
+  grid-template-columns: repeat(4, 1fr);
 }
 @media (min-width: 600px) {
-  .chapter-grid { padding: 20px; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(54px,1fr)); }
+  .chapter-grid { padding: 16px 20px; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(48px,1fr)); }
 }
 .chapter-item {
   padding: 12px 0; text-align: center; background: var(--surface);
   border-radius: 8px; box-shadow: 0 1px 2px var(--shadow); cursor: pointer;
   font-size: 0.85em; font-weight: 500; transition: all 0.15s;
+  color: var(--text);
 }
 .chapter-item:hover { background: var(--accent); color: #fff; }
 
@@ -247,11 +248,11 @@ main {
 }
 .verse-view .chapter-title:hover { opacity: 0.8; }
 .vs-grid {
-  display: grid; gap: 8px; padding: 14px;
-  grid-template-columns: repeat(auto-fill, minmax(48px,1fr));
+  display: grid; gap: 6px; padding: 10px;
+  grid-template-columns: repeat(4, 1fr);
 }
 @media (min-width: 600px) {
-  .vs-grid { padding: 20px; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(54px,1fr)); }
+  .vs-grid { padding: 16px 20px; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(48px,1fr)); }
 }
 .vs-item {
   padding: 12px 0; text-align: center; background: var(--surface);
