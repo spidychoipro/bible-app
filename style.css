@@ -847,11 +847,18 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 }
 .ct-compare {
   cursor: pointer;
-  font-size: 0.8em;
-  opacity: 0.6;
-  transition: opacity 0.15s;
-  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s;
+  margin-left: 6px;
   user-select: none;
+  vertical-align: middle;
 }
-.ct-compare:hover { opacity: 1; color: var(--accent); }
+.ct-compare:hover { opacity: 1; background: var(--hover); color: var(--accent); }
+.ct-compare:active { opacity: 1; background: var(--border); }
 

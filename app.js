@@ -942,7 +942,7 @@
 
     renderContent(`
       <div class="verse-view">
-        <div class=\"chapter-title\"><span class=\"ct-text\">${name} ${chNum}${txt('chapter')}</span><span class=\"ct-compare\" id=\"btnCompare\">⧃</span></div>
+        <div class=\"chapter-title\"><span class=\"ct-text\">${name} ${chNum}${txt('chapter')}</span><span class=\"ct-compare\" id=\"btnCompare\" title=\"${currentLang === 'ko' ? '번역본 비교' : 'Compare Translations'}\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\"><use href=\"#i-compare\"/></svg></span></div>
         ${verses.map((v,i)=>{
           const vn = i+1;
           const bm = isBookmarked(name, chNum, vn);
