@@ -46,6 +46,30 @@
     if (currentLang === 'ko') return testament === 'ot' ? otOrder : ntOrder;
     return testament === 'ot' ? enOtOrder : enNtOrder;
   }
+  /* ─── Daily verse ─── */
+  function getDailyVerse() {
+    if (!bible || bible.length === 0) return null;
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now - start) / 86400000);
+    let total = 0;
+    for (const book of bible) {
+      for (const ch of book.chapters) total += ch.length;
+    }
+    let target = dayOfYear % total;
+    for (const book of bible) {
+      for (let ci = 0; ci < book.chapters.length; ci++) {
+        const ch = book.chapters[ci];
+        if (target < ch.length) {
+          const displayName = currentLang === 'ko' ? (koNames[book.name] || book.name) : book.name;
+          return { book: displayName, ch: ci + 1, v: target + 1, text: ch[target], enName: book.name };
+        }
+        target -= ch.length;
+      }
+    }
+    return null;
+  }
+
   function txt(key) {
     const map = {
       chapter: { ko:'장', en:'' }, chapters: { ko:'장', en:'chapters' },
@@ -60,6 +84,7 @@
       error: { ko:'오류 발생', en:'Error' },
       retry: { ko:'다시 시도', en:'Retry' },
       home: { ko:'성경', en:'Bible' },
+      chapter: { ko:'장', en:' ' },
       myStuff: { ko:'내 자료', en:'My Stuff' },
       settings: { ko:'설정', en:'Settings' },
     };
@@ -422,12 +447,20 @@
     setTitle(txt('home'));
     showBack(false);
     const curTrans = TRANSLATIONS.find(t => t.id === currentTranslation);
+    const dv = getDailyVerse();
     content.innerHTML = `
       <div class="trans-bar" id="transBar">
         <span class="trans-label">📖</span>
         <span class="trans-name" id="transName">${curTrans ? curTrans.label : '??'}</span>
         <span class="trans-arrow">▾</span>
       </div>
+      ${dv ? `
+      <div class="daily-verse" id="dailyVerse" data-book="${dv.enName}" data-ch="${dv.ch}" data-v="${dv.v}">
+        <div class="dv-label">${currentLang === 'ko' ? '✝ 오늘의 말씀' : '✝ Verse of the Day'}</div>
+        <div class="dv-text">${escHtml(dv.text)}</div>
+        <div class="dv-ref">${dv.book} ${dv.ch}:${dv.v}</div>
+      </div>` : ''}
+      ${showReadingPlanUI()}
       <div class="testament-tabs">
         <button class="active" data-t="ot">${currentLang === 'ko' ? '구약' : 'OT'}</button>
         <button data-t="nt">${currentLang === 'ko' ? '신약' : 'NT'}</button>
@@ -435,6 +468,12 @@
       <div class="book-list" id="bookList"></div>
     `;
     document.getElementById('transBar').addEventListener('click', showTranslationPicker);
+    const dvEl = document.getElementById('dailyVerse');
+    if (dvEl) {
+      dvEl.addEventListener('click', () => { const d = dvEl.dataset; showChapter(d.book, parseInt(d.ch), parseInt(d.v)); });
+      addDailyVerseCardBtn();
+    }
+    setupReadingPlanUI();
     const tabs = $$('.testament-tabs button');
     tabs.forEach(t => t.addEventListener('click', () => {
       tabs.forEach(x=>x.classList.remove('active'));
@@ -602,6 +641,7 @@
         <button class="act-btn" id="actBookmark" title="북마크">☆</button>
         <button class="act-btn" id="actHighlight" title="하이라이트">🟡</button>
         <button class="act-btn" id="actNote" title="메모">📝</button>
+        <button class="act-btn" id="actCard" title="말씀카드">🖼️</button>
         <button class="act-btn" id="actCopy" title="복사">📋</button>
         <button class="act-btn" id="actDeselect" title="선택안함">✕</button>
       `;
@@ -667,6 +707,15 @@
         const v = parseInt(sel.dataset.v);
         const existing = getNote(book, ch, v);
         showNoteModal(book, ch, v, existing ? existing.text : '');
+      });
+
+      document.getElementById('actCard').addEventListener('click', () => {
+        const sel = content.querySelector('.verse-item.selected');
+        if (!sel) return;
+        const vn = sel.dataset.v;
+        const text = sel.querySelector('.vtext').textContent;
+        const ref = currentBook + ' ' + currentChapter + ':' + vn;
+        generateVerseCard(text, ref);
       });
 
       document.getElementById('actCopy').addEventListener('click', () => {
@@ -934,6 +983,230 @@
     const d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+  }
+
+  /* ─── Verse card generation ─── */
+  async function generateVerseCard(text, ref) {
+    const W = 800, H = 1000;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Gradient background (warm sunset)
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#1a1a2e');
+    grad.addColorStop(0.5, '#16213e');
+    grad.addColorStop(1, '#0f3460');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Accent line
+    ctx.fillStyle = '#c49a6c';
+    ctx.fillRect(60, 140, 80, 3);
+
+    // Reference (top area)
+    ctx.fillStyle = '#c49a6c';
+    ctx.font = '600 28px Pretendard';
+    ctx.textAlign = 'center';
+    ctx.fillText(ref, W / 2, 120);
+
+    // Verse text
+    await document.fonts.load('400 38px Pretendard');
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '400 38px Pretendard';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const maxW = W - 120;
+    const lines = [];
+    const words = text.split(' ');
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxW) {
+        lines.push(line);
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+
+    const lineH = 54;
+    const totalH = lines.length * lineH;
+    const startY = (H - totalH) / 2 + 40;
+
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], W / 2, startY + i * lineH);
+    }
+
+    // Bottom accent
+    ctx.fillStyle = '#c49a6c';
+    ctx.fillRect(W - 140, H - 140, 80, 3);
+
+    // "성경" watermark
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.font = '400 16px Pretendard';
+    ctx.textAlign = 'right';
+    ctx.fillText('Bible App', W - 30, H - 30);
+
+    // Convert to blob
+    canvas.toBlob(async function(blob) {
+      if (!blob) { showToast('이미지 생성 실패'); return; }
+      const file = new File([blob], 'bible-verse.png', { type: 'image/png' });
+      const url = URL.createObjectURL(blob);
+
+      // Try Web Share API first
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: ref });
+          URL.revokeObjectURL(url);
+          return;
+        } catch(e) { if (e.name !== 'AbortError') showToast('공유 실패'); }
+      }
+
+      // Fallback: download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bible-verse-' + ref.replace(/[^a-z0-9]/gi, '_') + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('이미지 저장됨');
+    }, 'image/png');
+  }
+
+  /* ─── Daily verse card button ─── */
+  function addDailyVerseCardBtn() {
+    const dv = document.getElementById('dailyVerse');
+    if (!dv) return;
+    const btn = document.createElement('button');
+    btn.className = 'dv-card-btn';
+    btn.textContent = '🖼️';
+    btn.title = '말씀카드 만들기';
+    dv.appendChild(btn);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const t = dv.querySelector('.dv-text')?.textContent;
+      const r = dv.querySelector('.dv-ref')?.textContent;
+      if (t && r) generateVerseCard(t, r);
+    });
+  }
+
+  /* ─── Reading plan (1 year) ─── */
+  const RP_KEY = 'bibleReadPlan';
+
+  function generateReadingPlan() {
+    const allCh = [];
+    for (const book of bible) {
+      const name = book.name;
+      for (let i = 0; i < book.chapters.length; i++) {
+        allCh.push({ book: name, ch: i + 1 });
+      }
+    }
+    const totalDays = 365;
+    const plan = [];
+    for (let d = 0; d < totalDays; d++) {
+      const start = Math.floor(d * allCh.length / totalDays);
+      const end = Math.floor((d + 1) * allCh.length / totalDays);
+      const items = [];
+      for (let i = start; i < end; i++) {
+        items.push(allCh[i]);
+      }
+      plan.push(items);
+    }
+    return plan;
+  }
+
+  function getReadingPlan() {
+    if (!bible || bible.length === 0) return [];
+    let plan = sessionStorage.getItem('biblePlan');
+    if (plan) return JSON.parse(plan);
+    plan = generateReadingPlan();
+    sessionStorage.setItem('biblePlan', JSON.stringify(plan));
+    return plan;
+  }
+
+  function getTodayReading() {
+    const plan = getReadingPlan();
+    if (plan.length === 0) return null;
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    const day = Math.min(dayOfYear, plan.length - 1);
+    return { day, total: plan.length, items: plan[day] };
+  }
+
+  function getCompletedDays() {
+    try { return JSON.parse(localStorage.getItem(RP_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function toggleDayComplete(day) {
+    const list = getCompletedDays();
+    const idx = list.indexOf(day);
+    if (idx >= 0) list.splice(idx, 1);
+    else list.push(day);
+    localStorage.setItem(RP_KEY, JSON.stringify(list));
+    return idx < 0;
+  }
+
+  function isDayComplete(day) {
+    return getCompletedDays().indexOf(day) >= 0;
+  }
+
+  function showReadingPlanUI() {
+    const today = getTodayReading();
+    if (!today) return '';
+    const completed = getCompletedDays();
+    const displayCh = (item) => {
+      const n = currentLang === 'ko' ? (koNames[item.book] || item.book) : item.book;
+      return `<a href="#" class="rp-ch-link" data-book="${item.book}" data-ch="${item.ch}">${n} ${item.ch}${txt('chapter').trim()}</a>`;
+    };
+    return `
+      <div class="reading-plan" id="readingPlan">
+        <div class="rp-header">
+          <span class="rp-title">${currentLang === 'ko' ? '📖 1년 1독' : '📖 Bible in a Year'}</span>
+          <span class="rp-day">${currentLang === 'ko' ? 'Day' : 'Day'} ${today.day + 1}/${today.total}</span>
+        </div>
+        <div class="rp-progress">
+          <div class="rp-bar"><div class="rp-fill" style="width:${(completed.length / today.total * 100).toFixed(1)}%"></div></div>
+          <span class="rp-pct">${completed.length}/${today.total} (${(completed.length / today.total * 100).toFixed(0)}%)</span>
+        </div>
+        <div class="rp-today">
+          <div class="rp-today-label">${currentLang === 'ko' ? '오늘의 읽기' : 'Today'}</div>
+          <div class="rp-chapters">${today.items.map(i => '<span class="rp-ch">' + displayCh(i) + '</span>').join(', ')}</div>
+          <button class="rp-check ${isDayComplete(today.day) ? 'done' : ''}" data-day="${today.day}">
+            ${isDayComplete(today.day) ? '✅' : '☑️'} ${currentLang === 'ko' ? '읽음' : 'Done'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function setupReadingPlanUI() {
+    const rp = document.getElementById('readingPlan');
+    if (!rp) return;
+    const btn = rp.querySelector('.rp-check');
+    if (btn) btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const day = parseInt(this.dataset.day);
+      const done = toggleDayComplete(day);
+      this.innerHTML = (done ? '✅ ' : '☑️ ') + (currentLang === 'ko' ? '읽음' : 'Done');
+      this.classList.toggle('done', done);
+      // Update progress bar
+      const plan = getReadingPlan();
+      const completed = getCompletedDays();
+      const fill = rp.querySelector('.rp-fill');
+      const pct = rp.querySelector('.rp-pct');
+      if (fill) fill.style.width = (completed.length / plan.length * 100).toFixed(1) + '%';
+      if (pct) pct.textContent = completed.length + '/' + plan.length + ' (' + (completed.length / plan.length * 100).toFixed(0) + '%)';
+    });
+    rp.addEventListener('click', function(e) {
+      const link = e.target.closest('.rp-ch-link');
+      if (!link) return;
+      e.preventDefault();
+      showChapter(link.dataset.book, parseInt(link.dataset.ch), 1);
+    });
   }
 
   function doSearch(query) {
