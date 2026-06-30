@@ -37,6 +37,7 @@
   const content = $('#content');
   const btnBack = $('#btnBack');
   const btnSearch = $('#btnSearch');
+  const btnMyStuff = $('#btnMyStuff');
   const btnSettings = $('#btnSettings');
   const searchBar = $('#searchBar');
   const searchInput = $('#searchInput');
@@ -52,6 +53,70 @@
   function loadPosition() {
     try { return JSON.parse(localStorage.getItem(POS_KEY)); }
     catch { return null; }
+  }
+
+  /* ─── Bookmarks ─── */
+  const BM_KEY = 'bibleBookmarks';
+  function getBookmarks() {
+    try { return JSON.parse(localStorage.getItem(BM_KEY)) || []; }
+    catch { return []; }
+  }
+  function saveBookmarks(arr) {
+    localStorage.setItem(BM_KEY, JSON.stringify(arr));
+  }
+  function toggleBookmark(book, ch, v, text) {
+    const list = getBookmarks();
+    const idx = list.findIndex(b => b.book === book && b.ch === ch && b.v === v);
+    if (idx >= 0) { list.splice(idx, 1); saveBookmarks(list); return false; }
+    list.unshift({ book, ch, v, text, ts: Date.now() });
+    saveBookmarks(list);
+    return true;
+  }
+  function isBookmarked(book, ch, v) {
+    return getBookmarks().some(b => b.book === book && b.ch === ch && b.v === v);
+  }
+
+  /* ─── Notes ─── */
+  const NT_KEY = 'bibleNotes';
+  function getNotes() {
+    try { return JSON.parse(localStorage.getItem(NT_KEY)) || {}; }
+    catch { return {}; }
+  }
+  function saveNotes(obj) {
+    localStorage.setItem(NT_KEY, JSON.stringify(obj));
+  }
+  function setNote(book, ch, v, text) {
+    const key = book + '|' + ch + '|' + v;
+    const obj = getNotes();
+    if (text) { obj[key] = { text, ts: Date.now() }; }
+    else { delete obj[key]; }
+    saveNotes(obj);
+  }
+  function getNote(book, ch, v) {
+    const key = book + '|' + ch + '|' + v;
+    return getNotes()[key] || null;
+  }
+
+  /* ─── Highlights ─── */
+  const HL_KEY = 'bibleHighlights';
+  const HL_COLORS = ['yellow','green','blue','pink'];
+  function getHighlights() {
+    try { return JSON.parse(localStorage.getItem(HL_KEY)) || {}; }
+    catch { return {}; }
+  }
+  function saveHighlights(obj) {
+    localStorage.setItem(HL_KEY, JSON.stringify(obj));
+  }
+  function setHighlight(book, ch, v, color) {
+    const key = book + '|' + ch + '|' + v;
+    const obj = getHighlights();
+    if (color && HL_COLORS.includes(color)) { obj[key] = { color, ts: Date.now() }; }
+    else { delete obj[key]; }
+    saveHighlights(obj);
+  }
+  function getHighlight(book, ch, v) {
+    const key = book + '|' + ch + '|' + v;
+    return getHighlights()[key] || null;
   }
 
   /* ─── Toast ─── */
@@ -216,6 +281,7 @@
   /* ─── Navigation ─── */
   btnBack.addEventListener('click', goBack);
   btnSearch.addEventListener('click', toggleSearch);
+  btnMyStuff.addEventListener('click', showMyStuff);
   btnSettings.addEventListener('click', openSettings);
   searchClose.addEventListener('click', () => { searchBar.style.display='none'; searchInput.value=''; });
   searchInput.addEventListener('keydown', e => { if (e.key==='Enter') doSearch(searchInput.value); });
@@ -254,6 +320,7 @@
     else if (currentView === 'book') { showHome(); }
     else if (currentView === 'search') { showHome(); }
     else if (currentView === 'verse') { showBook(currentBook); }
+    else if (currentView === 'mystuff') { showHome(); }
   }
 
   function setTitle(t) { title.textContent = t; }
@@ -403,7 +470,13 @@
         <div class="chapter-title">${koName} ${chNum}장</div>
         ${verses.map((v,i)=>{
           const vn = i+1;
-          return `<div class="verse-item" data-v="${vn}"><span class="vnum">${vn}</span><span class="vtext">${v}</span></div>`;
+          const bm = isBookmarked(koName, chNum, vn);
+          const hl = getHighlight(koName, chNum, vn);
+          const nt = getNote(koName, chNum, vn);
+          const hlCls = hl ? ' hl-' + hl.color : '';
+          const bmMark = bm ? '<span class="bm-indicator">★</span>' : '';
+          const ntMark = nt ? '<span class="nt-indicator">📝</span>' : '';
+          return `<div class="verse-item${hlCls}" data-v="${vn}" data-book="${koName}" data-ch="${chNum}"><span class="vnum">${vn}</span><span class="vtext">${v}</span>${bmMark}${ntMark}</div>`;
         }).join('')}
       </div>
         <div class="chapter-nav">
@@ -434,52 +507,127 @@
       });
     }
 
-    /* ─── Copy & deselect buttons ─── */
-    let copyBtn = document.querySelector('.copy-btn');
-    if (!copyBtn) {
-      copyBtn = document.createElement('button');
-      copyBtn.className = 'copy-btn';
-      copyBtn.textContent = '📋';
-      copyBtn.title = '선택한 절 복사';
-      document.body.appendChild(copyBtn);
-      copyBtn.addEventListener('click', () => {
+    /* ─── Action bar ─── */
+    let actionBar = document.getElementById('verseActionBar');
+    if (!actionBar) {
+      actionBar = document.createElement('div');
+      actionBar.id = 'verseActionBar';
+      actionBar.className = 'verse-action-bar';
+      actionBar.innerHTML = `
+        <button class="act-btn" id="actBookmark" title="북마크">☆</button>
+        <button class="act-btn" id="actHighlight" title="하이라이트">🟡</button>
+        <button class="act-btn" id="actNote" title="메모">📝</button>
+        <button class="act-btn" id="actCopy" title="복사">📋</button>
+        <button class="act-btn" id="actDeselect" title="선택안함">✕</button>
+      `;
+      document.body.appendChild(actionBar);
+
+      document.getElementById('actBookmark').addEventListener('click', () => {
+        const sel = content.querySelector('.verse-item.selected');
+        if (!sel) return;
+        const book = sel.dataset.book;
+        const ch = parseInt(sel.dataset.ch);
+        const v = parseInt(sel.dataset.v);
+        const text = sel.querySelector('.vtext').textContent;
+        const added = toggleBookmark(book, ch, v, text);
+        showToast(added ? '북마크에 추가됨' : '북마크에서 제거됨');
+        showChapter(currentBook, currentChapter, parseInt(sel.dataset.v));
+      });
+
+      document.getElementById('actHighlight').addEventListener('click', () => {
+        const sel = content.querySelector('.verse-item.selected');
+        if (!sel) return;
+        const book = sel.dataset.book;
+        const ch = parseInt(sel.dataset.ch);
+        const v = parseInt(sel.dataset.v);
+        const current = getHighlight(book, ch, v);
+        let picker = document.getElementById('hlPicker');
+        if (!picker) {
+          picker = document.createElement('div');
+          picker.id = 'hlPicker';
+          picker.className = 'hl-picker';
+          picker.innerHTML = `
+            <button class="hl-pick yellow" data-c="yellow"></button>
+            <button class="hl-pick green" data-c="green"></button>
+            <button class="hl-pick blue" data-c="blue"></button>
+            <button class="hl-pick pink" data-c="pink"></button>
+            <button class="hl-pick remove" data-c="">✕</button>
+          `;
+          document.body.appendChild(picker);
+          picker.querySelectorAll('.hl-pick').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const c = btn.dataset.c;
+              const b = picker.dataset.forBook;
+              const cc = parseInt(picker.dataset.forCh);
+              const vv = parseInt(picker.dataset.forV);
+              setHighlight(b, cc, vv, c || null);
+              picker.classList.remove('show');
+              showToast(c ? '하이라이트 적용됨' : '하이라이트 제거됨');
+              showChapter(currentBook, currentChapter, vv);
+            });
+          });
+        }
+        picker.dataset.forBook = book;
+        picker.dataset.forCh = ch;
+        picker.dataset.forV = v;
+        picker.querySelectorAll('.hl-pick').forEach(b => b.classList.toggle('active', b.dataset.c === (current ? current.color : '')));
+        picker.classList.toggle('show');
+      });
+
+      document.getElementById('actNote').addEventListener('click', () => {
+        const sel = content.querySelector('.verse-item.selected');
+        if (!sel) return;
+        const book = sel.dataset.book;
+        const ch = parseInt(sel.dataset.ch);
+        const v = parseInt(sel.dataset.v);
+        const existing = getNote(book, ch, v);
+        showNoteModal(book, ch, v, existing ? existing.text : '');
+      });
+
+      document.getElementById('actCopy').addEventListener('click', () => {
         const sel = content.querySelector('.verse-item.selected');
         if (!sel) return;
         const vn = sel.dataset.v;
         const text = sel.querySelector('.vtext').textContent;
-        const ref = `${koName} ${chNum}:${vn}`;
+        const ref = `${currentBook} ${currentChapter}:${vn}`;
         navigator.clipboard.writeText(`${ref} ${text}`).then(() => {
           showToast('복사되었습니다');
         }).catch(() => {
           showToast('복사 실패');
         });
       });
-    }
-    let deselectBtn = document.querySelector('body > .deselect-btn');
-    if (!deselectBtn) {
-      deselectBtn = document.createElement('button');
-      deselectBtn.className = 'deselect-btn';
-      deselectBtn.textContent = '선택 안함';
-      document.body.appendChild(deselectBtn);
-      deselectBtn.addEventListener('click', () => {
+
+      document.getElementById('actDeselect').addEventListener('click', () => {
+        const picker = document.getElementById('hlPicker');
+        if (picker) picker.classList.remove('show');
         showChapter(currentBook, currentChapter);
       });
     }
 
-    let updateCopyBtn = function() {
+    function updateActionBar() {
       const sel = content.querySelector('.verse-item.selected');
-      const copy = document.querySelector('.copy-btn');
-      const deselect = document.querySelector('body > .deselect-btn');
-      if (copy) copy.classList.toggle('show', !!sel);
-      if (deselect) deselect.classList.toggle('show', !!sel);
-    };
+      const bar = document.getElementById('verseActionBar');
+      const picker = document.getElementById('hlPicker');
+      if (picker) picker.classList.remove('show');
+      if (!bar) return;
+      if (!sel) { bar.classList.remove('show'); return; }
+      bar.classList.add('show');
+      const book = sel.dataset.book;
+      const ch = parseInt(sel.dataset.ch);
+      const v = parseInt(sel.dataset.v);
+      document.getElementById('actBookmark').textContent = isBookmarked(book, ch, v) ? '★' : '☆';
+      const hl = getHighlight(book, ch, v);
+      document.getElementById('actHighlight').style.opacity = hl ? '1' : '0.5';
+      const nt = getNote(book, ch, v);
+      document.getElementById('actNote').style.opacity = nt ? '1' : '0.5';
+    }
 
       content.querySelectorAll('.verse-item').forEach(el => {
         el.addEventListener('click', () => {
           content.querySelectorAll('.verse-item.selected').forEach(x=>x.classList.remove('selected'));
           el.classList.toggle('selected');
           history.replaceState(null, '', `#book=${encodeURIComponent(koName)}&ch=${chNum}&v=${el.dataset.v}`);
-          updateCopyBtn();
+          updateActionBar();
           savePosition(koName, chNum, parseInt(el.dataset.v));
         });
       });
@@ -546,6 +694,163 @@
         }
       }
     }, { passive: true });
+  }
+
+  /* ─── Note modal ─── */
+  function showNoteModal(book, ch, v, text) {
+    let overlay = document.getElementById('noteModalOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'noteModalOverlay';
+      overlay.className = 'note-modal-overlay';
+      overlay.innerHTML = `
+        <div class="note-modal">
+          <h3>📝 메모</h3>
+          <div class="ref"></div>
+          <textarea placeholder="메모를 입력하세요..."></textarea>
+          <div class="note-modal-actions">
+            <button class="note-cancel" id="noteCancel">취소</button>
+            <button class="note-delete" id="noteDelete" style="display:none">삭제</button>
+            <button class="note-save" id="noteSave">저장</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.classList.remove('open');
+      });
+      document.getElementById('noteCancel').addEventListener('click', () => overlay.classList.remove('open'));
+      document.getElementById('noteSave').addEventListener('click', () => {
+        const ta = overlay.querySelector('textarea');
+        const ref = overlay.dataset.ref || '';
+        const parts = ref.split('|');
+        if (parts.length === 3) {
+          const b = parts[0], c = parseInt(parts[1]), vv = parseInt(parts[2]);
+          if (ta.value.trim()) {
+            setNote(b, c, vv, ta.value.trim());
+            showToast('메모가 저장됨');
+          } else {
+            setNote(b, c, vv, '');
+            showToast('메모가 제거됨');
+          }
+          overlay.classList.remove('open');
+          showChapter(currentBook, currentChapter, currentChapter ? parseInt(overlay.querySelector('.ref').textContent.split(':')[1]) : undefined);
+        }
+      });
+      document.getElementById('noteDelete').addEventListener('click', () => {
+        const ref = overlay.dataset.ref || '';
+        const parts = ref.split('|');
+        if (parts.length === 3) {
+          setNote(parts[0], parseInt(parts[1]), parseInt(parts[2]), '');
+          showToast('메모가 삭제됨');
+          overlay.classList.remove('open');
+          showChapter(currentBook, currentChapter, parseInt(parts[2]));
+        }
+      });
+    }
+    overlay.dataset.ref = book + '|' + ch + '|' + v;
+    overlay.querySelector('.ref').textContent = book + ' ' + ch + ':' + v;
+    overlay.querySelector('textarea').value = text || '';
+    const delBtn = document.getElementById('noteDelete');
+    delBtn.style.display = text ? 'inline-block' : 'none';
+    overlay.classList.add('open');
+    overlay.querySelector('textarea').focus();
+  }
+
+  /* ─── My Stuff view ─── */
+  function showMyStuff() {
+    currentView = 'mystuff';
+    setTitle('내 자료');
+    showBack(true);
+    content.innerHTML = `
+      <div class="my-stuff-tabs">
+        <button class="active" data-tab="bookmark">⭐ 북마크</button>
+        <button data-tab="highlight">🟡 하이라이트</button>
+        <button data-tab="note">📝 메모</button>
+      </div>
+      <div class="my-stuff-list" id="myStuffList"></div>
+    `;
+    content.querySelectorAll('.my-stuff-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        content.querySelectorAll('.my-stuff-tabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderMyStuff(btn.dataset.tab);
+      });
+    });
+    renderMyStuff('bookmark');
+  }
+
+  function renderMyStuff(tab) {
+    const list = document.getElementById('myStuffList');
+    if (!list) return;
+    let items = [];
+    if (tab === 'bookmark') {
+      const bms = getBookmarks();
+      items = bms.map(b => ({
+        html: '<div class="ref">' + b.book + ' ' + b.ch + ':' + b.v + '</div><div class="text">' + escHtml(b.text) + '</div>',
+        book: b.book, ch: b.ch, v: b.v,
+        del: () => { toggleBookmark(b.book, b.ch, b.v, ''); renderMyStuff(tab); showToast('북마크 제거됨'); }
+      }));
+    } else if (tab === 'highlight') {
+      const hls = getHighlights();
+      items = Object.keys(hls).map(k => {
+        const p = k.split('|');
+        const ref = p[0] + ' ' + p[1] + ':' + p[2];
+        const c = hls[k].color;
+        const colorMap = { yellow:'🟡', green:'🟢', blue:'🔵', pink:'🩷' };
+        return {
+          html: '<div class="ref">' + colorMap[c] + ' ' + ref + '</div><div class="text"' + (c ? ' style="border-left:3px solid var(--hl-' + c + ');padding-left:8px"' : '') + '></div>',
+          book: p[0], ch: parseInt(p[1]), v: parseInt(p[2]),
+          del: () => { setHighlight(p[0], parseInt(p[1]), parseInt(p[2]), ''); renderMyStuff(tab); showToast('하이라이트 제거됨'); }
+        };
+      });
+      // Fetch text for highlighted verses
+      items.forEach(item => {
+        const book = findBook(item.book);
+        if (book && book.chapters[item.ch - 1] && book.chapters[item.ch - 1][item.v - 1]) {
+          item.html = '<div class="ref">🟡 ' + item.book + ' ' + item.ch + ':' + item.v + '</div><div class="text">' + escHtml(book.chapters[item.ch - 1][item.v - 1]) + '</div>';
+        }
+      });
+    } else if (tab === 'note') {
+      const nts = getNotes();
+      items = Object.keys(nts).map(k => {
+        const p = k.split('|');
+        return {
+          html: '<div class="ref">' + p[0] + ' ' + p[1] + ':' + p[2] + '</div><div class="text" style="opacity:0.8">💬 ' + escHtml(nts[k].text) + '</div>',
+          book: p[0], ch: parseInt(p[1]), v: parseInt(p[2]),
+          del: () => { setNote(p[0], parseInt(p[1]), parseInt(p[2]), ''); renderMyStuff(tab); showToast('메모 삭제됨'); }
+        };
+      });
+    }
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="my-stuff-empty">📭 항목이 없습니다<br><small>성경을 읽다가 마음에 드는 구절을 저장해보세요</small></div>';
+      return;
+    }
+
+    list.innerHTML = items.map((item, i) =>
+      '<div class="my-stuff-item" data-idx="' + i + '">' + item.html + '<button class="del-btn" data-idx="' + i + '">✕</button></div>'
+    ).join('');
+
+    list.querySelectorAll('.my-stuff-item').forEach(el => {
+      const idx = parseInt(el.dataset.idx);
+      el.addEventListener('click', e => {
+        if (e.target.classList.contains('del-btn')) return;
+        const item = items[idx];
+        showChapter(item.book, item.ch, item.v);
+      });
+      const delBtn = el.querySelector('.del-btn');
+      if (delBtn) delBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        items[idx].del();
+      });
+    });
+  }
+
+  function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
   }
 
   function doSearch(query) {
