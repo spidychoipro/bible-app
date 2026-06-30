@@ -263,6 +263,7 @@ main {
 .verse-item {
   padding: 10px 16px; border-radius: 8px; margin-bottom: 4px;
   transition: background 0.15s; cursor: pointer; position: relative;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
 .verse-item:hover { background: var(--verse-hover); }
 .verse-item .vnum {
