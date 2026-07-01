@@ -9,6 +9,7 @@
     { id: 'nhk', label: '새한글', lang: 'ko' },
     { id: 'msg', label: 'The Message', lang: 'en' },
     { id: 'nas', label: 'NASB 2020', lang: 'en' },
+    { id: 'esv', label: 'ESV', lang: 'en' },
     { id: 'niv', label: 'NIV 2011', lang: 'en' },
   ];
   let currentTranslation = localStorage.getItem(TRANS_KEY) || 'kjv';
@@ -510,7 +511,7 @@
   };
 
   async function loadBibleData(transId) {
-    const CACHE_VER = 'v11';
+    const CACHE_VER = 'v12';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -529,7 +530,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=11';
+      const url = 'data/bible-' + transId + '.json?v=12';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
@@ -550,7 +551,7 @@
 
 
   async function loadCompareData(transId) {
-    const CACHE_VER = 'v11';
+    const CACHE_VER = 'v12';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -566,7 +567,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=11';
+      const url = 'data/bible-' + transId + '.json?v=12';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       compareBible = await resp.json();
@@ -778,7 +779,7 @@
   function getPreferredCompareTranslationId() {
     const current = TRANSLATIONS.find(t => t.id === currentTranslation);
     const preferred = current && current.lang === 'ko'
-      ? ['niv', 'nas', 'msg']
+      ? ['niv', 'esv', 'nas', 'msg']
       : ['kjv', 'krv', 'nks', 'nhk'];
     return preferred.find(id => id !== currentTranslation) || TRANSLATIONS.find(t => t.id !== currentTranslation)?.id;
   }
