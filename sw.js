@@ -1,6 +1,6 @@
-const CACHE = 'bible-v13';
+const CACHE = 'bible-v14';
 const STATIC = [
-  './', './index.html', './app.js', './style.css',
+  './app.js', './style.css',
   './fonts/fonts.css', './fonts/Pretendard-Regular.woff2',
   './fonts/Pretendard-SemiBold.woff2', './fonts/Pretendard-Bold.woff2',
   './icon.svg', './manifest.json'
@@ -22,6 +22,15 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  if (e.request.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('/index.html')) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
   // Bible data (bible-*.json): cache-first, background refresh
   if (url.pathname.includes('/data/bible-')) {
     e.respondWith(

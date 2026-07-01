@@ -4,11 +4,11 @@
 :root, [data-theme="light"] {
   --bg: #f5f0e8;
   --surface: #fff;
-  --text: #1a1a1a;
-  --text-dim: #4f463b;
+  --text: #111;
+  --text-dim: #2f2a24;
   --accent: #8b4513;
   --accent-light: #a0522d;
-  --border: #ddd;
+  --border: #d3c7b8;
   --header-bg: #1a1a2e;
   --header-text: #fff;
   --hover: #f0e8d8;
@@ -26,7 +26,7 @@
   --bg: #111;
   --surface: #1e1e1e;
   --text: #ddd;
-  --text-dim: #888;
+  --text-dim: #aaa;
   --accent: #c49a6c;
   --accent-light: #d4a84b;
   --border: #333;
@@ -47,7 +47,7 @@
   --bg: #f4ecd8;
   --surface: #faf3e0;
   --text: #3b2f1e;
-  --text-dim: #5a4a32;
+  --text-dim: #3f3527;
   --accent: #8b4513;
   --accent-light: #a0522d;
   --border: #d4c5a9;
@@ -64,7 +64,7 @@
   --bg: #e8f0e0;
   --surface: #f0f8ea;
   --text: #1a3a1a;
-  --text-dim: #3a5a3a;
+  --text-dim: #243f24;
   --accent: #2d6a2d;
   --accent-light: #3a8a3a;
   --border: #b8d4b0;
@@ -81,7 +81,7 @@
   --bg: #0a0a12;
   --surface: #14141e;
   --text: #c0c0d0;
-  --text-dim: #606078;
+  --text-dim: #a8a8c8;
   --accent: #6a6aff;
   --accent-light: #8888ff;
   --border: #222;
@@ -664,10 +664,10 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 .tab-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
   padding: 6px 0; border: none; background: none; color: var(--text-dim);
-  cursor: pointer; font-size: 0.6em; font-weight: 500; transition: color 0.15s;
+  cursor: pointer; font-size: 0.6em; font-weight: 600; transition: color 0.15s;
   font-family: inherit; line-height: 1.2;
 }
-.tab-btn svg { opacity: 0.6; transition: opacity 0.15s; }
+.tab-btn svg { opacity: 0.85; transition: opacity 0.15s; }
 .tab-btn.active { color: var(--accent); }
 .tab-btn.active svg { opacity: 1; }
 .tab-btn:hover { color: var(--accent); }
@@ -926,10 +926,18 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  gap: 4px;
+  min-width: 58px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  opacity: 0.72;
+  background: var(--surface);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.72em;
+  font-weight: 700;
+  opacity: 1;
   transition: opacity 0.15s, background 0.15s;
   margin-left: 6px;
   user-select: none;

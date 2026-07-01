@@ -556,7 +556,7 @@
   };
 
   async function loadBibleData(transId) {
-    const CACHE_VER = 'v13';
+    const CACHE_VER = 'v14';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -575,7 +575,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=13';
+      const url = 'data/bible-' + transId + '.json?v=14';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
@@ -596,7 +596,7 @@
 
 
   async function loadCompareData(transId) {
-    const CACHE_VER = 'v13';
+    const CACHE_VER = 'v14';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -612,7 +612,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=13';
+      const url = 'data/bible-' + transId + '.json?v=14';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       compareBible = await resp.json();
@@ -871,7 +871,7 @@
       const ch = book ? book.chapters.length : 0;
       return `<div class="bn-book-item" data-book="${n}" style="padding:10px 14px;border-radius:8px;cursor:pointer;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;background:var(--hover);color:var(--text);transition:background 0.15s">
         <span style="font-weight:500">${n}</span>
-        <span style="font-size:0.75em;opacity:0.6">${ch}${txt('chapter').trim()}</span>
+        <span style="font-size:0.75em;color:var(--text-dim);font-weight:600">${ch}${txt('chapter').trim()}</span>
       </div>`;
     }).join('');
     list.querySelectorAll('.bn-book-item').forEach(el => {
@@ -1044,7 +1044,7 @@
 
     renderContent(`
       <div class="verse-view">
-        <div class=\"chapter-title\"><span class=\"ct-text\">${displayName} ${chNum}${txt('chapter')}</span><span class=\"ct-compare\" id=\"btnCompare\" title=\"${currentLang === 'ko' ? '번역본 비교' : 'Compare Translations'}\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\"><use href=\"#i-compare\"/></svg></span></div>
+        <div class=\"chapter-title\"><span class=\"ct-text\">${displayName} ${chNum}${txt('chapter')}</span><button class=\"ct-compare\" id=\"btnCompare\" type=\"button\" title=\"${currentLang === 'ko' ? '번역본 비교' : 'Compare Translations'}\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\"><use href=\"#i-compare\"/></svg><span>${currentLang === 'ko' ? '비교' : 'Compare'}</span></button></div>
         ${verses.map((v,i)=>{
           const vn = i+1;
           const bm = isBookmarked(displayName, chNum, vn);
