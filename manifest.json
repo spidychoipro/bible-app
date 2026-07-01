@@ -1,7 +1,7 @@
 {
   "name": "성경 읽기",
   "short_name": "성경",
-  "description": "개역한글 성경 읽기 앱",
+  "description": "8개 번역 성경 읽기 앱",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f5f0e8",
