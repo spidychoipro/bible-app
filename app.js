@@ -510,7 +510,7 @@
   };
 
   async function loadBibleData(transId) {
-    const CACHE_VER = 'v10';
+    const CACHE_VER = 'v11';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -529,7 +529,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=10';
+      const url = 'data/bible-' + transId + '.json?v=11';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
@@ -550,7 +550,7 @@
 
 
   async function loadCompareData(transId) {
-    const CACHE_VER = 'v10';
+    const CACHE_VER = 'v11';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -566,7 +566,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=10';
+      const url = 'data/bible-' + transId + '.json?v=11';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       compareBible = await resp.json();
@@ -751,10 +751,36 @@
       const h3 = overlay.querySelector('h3');
       if (h3) h3.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:middle;margin-right:4px"><use href="#i-book"/></svg> '
         + (currentLang === 'ko' ? '비교할 번역 선택' : 'Select Translation to Compare');
+      const list = document.getElementById('transList');
+      const quickId = getPreferredCompareTranslationId();
+      const quickTrans = TRANSLATIONS.find(t => t.id === quickId);
+      const currentTrans = TRANSLATIONS.find(t => t.id === currentTranslation);
+      if (list && quickTrans && currentTrans) {
+        list.insertAdjacentHTML('afterbegin',
+          '<button class="compare-quick" id="compareQuick" type="button">'
+          + '<span class="compare-quick-title">' + (currentLang === 'ko' ? '한영 병행 보기' : 'Korean-English Parallel') + '</span>'
+          + '<span class="compare-quick-sub">' + currentTrans.label + ' + ' + quickTrans.label + '</span>'
+          + '</button>'
+        );
+        const quick = document.getElementById('compareQuick');
+        if (quick) quick.addEventListener('click', () => {
+          overlay.style.display = 'none';
+          delete overlay._cmpCallback;
+          callback(quickId);
+        });
+      }
       overlay.querySelectorAll('.trans-item').forEach(el => {
         if (el.dataset.id === currentTranslation) el.style.display = 'none';
       });
     }
+  }
+
+  function getPreferredCompareTranslationId() {
+    const current = TRANSLATIONS.find(t => t.id === currentTranslation);
+    const preferred = current && current.lang === 'ko'
+      ? ['niv', 'nas', 'msg']
+      : ['kjv', 'krv', 'nks', 'nhk'];
+    return preferred.find(id => id !== currentTranslation) || TRANSLATIONS.find(t => t.id !== currentTranslation)?.id;
   }
 
   /* ─── Book navigator (dropdown from chapter view) ─── */
@@ -888,8 +914,13 @@
     const primaryVerses = primaryBook.chapters[chNum-1];
     const compareVerses = compareBook ? compareBook.chapters[chNum-1] : [];
     const maxV = Math.max(primaryVerses.length, compareVerses ? compareVerses.length : 0);
-    const primaryLabel = TRANSLATIONS.find(t => t.id === currentTranslation)?.label || currentTranslation;
-    const compareLabel = TRANSLATIONS.find(t => t.id === compareTranslation)?.label || compareTranslation;
+    const primaryTrans = TRANSLATIONS.find(t => t.id === currentTranslation);
+    const compareTrans = TRANSLATIONS.find(t => t.id === compareTranslation);
+    const primaryLabel = primaryTrans?.label || currentTranslation;
+    const compareLabel = compareTrans?.label || compareTranslation;
+    const primaryLang = primaryTrans?.lang === 'ko' ? '한글' : 'English';
+    const compareLang = compareTrans?.lang === 'ko' ? '한글' : 'English';
+    const isBilingual = primaryTrans && compareTrans && primaryTrans.lang !== compareTrans.lang;
     const ab = document.getElementById('verseActionBar');
     if (ab) ab.classList.remove('show');
     let rowsHtml = '';
@@ -903,14 +934,27 @@
       const hlCls = hl ? ' cmp-hl-' + hl.color : '';
       const bmMark = bm ? '<span class="bm-indicator"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><use href="#i-bookmark"/></svg></span>' : '';
       const ntMark = nt ? '<span class="nt-indicator"><svg viewBox="0 0 24 24" width="14" height="14"><use href="#i-note"/></svg></span>' : '';
-      rowsHtml += '<div class="cmp-row">' + '<div class="cmp-cell cmp-cell-primary' + hlCls + '">' + '<span class="vnum">' + vn + '</span>' + '<span class="vtext">' + pText + '</span>' + bmMark + ntMark + '</div>' + '<div class="cmp-cell cmp-cell-secondary">' + '<span class="vnum">' + vn + '</span>' + '<span class="vtext">' + cText + '</span>' + '</div>' + '</div>';
+      rowsHtml += '<div class="cmp-row">'
+        + '<div class="cmp-cell cmp-cell-primary' + hlCls + '">'
+        + '<span class="cmp-cell-label">' + primaryLang + '</span>'
+        + '<span class="vnum">' + vn + '</span>' + '<span class="vtext">' + pText + '</span>' + bmMark + ntMark
+        + '</div>'
+        + '<div class="cmp-cell cmp-cell-secondary">'
+        + '<span class="cmp-cell-label">' + compareLang + '</span>'
+        + '<span class="vnum">' + vn + '</span>' + '<span class="vtext">' + cText + '</span>'
+        + '</div>'
+        + '</div>';
     }
     renderContent(''
       + '<div class="compare-view">'
       + '<div class="cmp-header">'
+      + '<div class="cmp-title">'
+      + '<span class="cmp-kicker">' + (isBilingual ? (currentLang === 'ko' ? '한영 병행' : 'Bilingual') : (currentLang === 'ko' ? '번역 비교' : 'Compare')) + '</span>'
       + '<span class="cmp-label">' + primaryLabel + ' | ' + compareLabel + '</span>'
+      + '</div>'
       + '<button class="cmp-exit-btn" id="cmpExit">✕ ' + (currentLang === 'ko' ? '단일보기' : 'Single View') + '</button>'
       + '</div>'
+      + '<div class="cmp-column-labels"><span>' + primaryLang + ' · ' + primaryLabel + '</span><span>' + compareLang + ' · ' + compareLabel + '</span></div>'
       + '<div class="cmp-body">'
       + rowsHtml
       + '</div>'

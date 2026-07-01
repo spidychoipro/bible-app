@@ -5,7 +5,7 @@
   --bg: #f5f0e8;
   --surface: #fff;
   --text: #1a1a1a;
-  --text-dim: #666;
+  --text-dim: #4f463b;
   --accent: #8b4513;
   --accent-light: #a0522d;
   --border: #ddd;
@@ -164,13 +164,13 @@ main {
 }
 .rp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .rp-title { font-size: 0.85em; font-weight: 700; }
-.rp-day { font-size: 0.7em; opacity: 0.6; }
+.rp-day { font-size: 0.7em; color: var(--text-dim); }
 .rp-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .rp-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
 .rp-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
-.rp-pct { font-size: 0.65em; opacity: 0.6; white-space: nowrap; }
+.rp-pct { font-size: 0.65em; color: var(--text-dim); white-space: nowrap; }
 .rp-today { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rp-today-label { font-size: 0.7em; font-weight: 600; opacity: 0.7; }
+.rp-today-label { font-size: 0.7em; font-weight: 600; color: var(--text-dim); }
 .rp-chapters { font-size: 0.8em; line-height: 1.6; flex: 1; min-width: 0; }
 .rp-ch { display: inline; }
 .rp-ch-link { color: var(--accent); text-decoration: none; }
@@ -688,9 +688,9 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   color: #fff;
 }
 .cv-card:active { opacity: 0.9; }
-.cv-card .cv-label { font-size: 0.65em; font-weight: 600; opacity: 0.75; margin-bottom: 8px; letter-spacing: 1.5px; }
+.cv-card .cv-label { font-size: 0.65em; font-weight: 600; opacity: 0.92; margin-bottom: 8px; letter-spacing: 1.5px; }
 .cv-card .cv-text { font-size: 1em; line-height: 1.7; font-weight: 500; margin-bottom: 8px; }
-.cv-card .cv-ref { font-size: 0.7em; font-weight: 600; opacity: 0.8; }
+.cv-card .cv-ref { font-size: 0.7em; font-weight: 600; opacity: 0.92; }
 .cv-card-btn {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   background: rgba(255,255,255,0.15); border: none; border-radius: 50%;
@@ -704,13 +704,13 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 .rp-card { padding: 14px 16px; }
 .rp-card .rp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .rp-card .rp-title { font-size: 0.8em; font-weight: 700; }
-.rp-card .rp-day { font-size: 0.65em; opacity: 0.5; }
+.rp-card .rp-day { font-size: 0.65em; color: var(--text-dim); }
 .rp-card .rp-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .rp-card .rp-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
 .rp-card .rp-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
-.rp-card .rp-pct { font-size: 0.6em; opacity: 0.5; white-space: nowrap; }
+.rp-card .rp-pct { font-size: 0.6em; color: var(--text-dim); white-space: nowrap; }
 .rp-card .rp-today { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.rp-card .rp-today-label { font-size: 0.65em; font-weight: 600; opacity: 0.6; }
+.rp-card .rp-today-label { font-size: 0.65em; font-weight: 600; color: var(--text-dim); }
 .rp-card .rp-chapters { font-size: 0.78em; line-height: 1.5; flex: 1; min-width: 0; }
 .rp-card .rp-ch-link { color: var(--accent); text-decoration: none; }
 .rp-card .rp-check { font-size: 0.65em; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); cursor: pointer; white-space: nowrap; }
@@ -722,6 +722,24 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 .tb-card .tb-label { font-size: 0.78em; }
 .tb-card .tb-name { font-size: 0.82em; font-weight: 600; color: var(--accent); flex: 1; }
 .tb-card .tb-arrow { font-size: 0.7em; color: var(--text-dim); }
+
+.compare-quick {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-family: inherit;
+}
+.compare-quick-title { font-size: 0.88em; font-weight: 700; color: var(--accent); }
+.compare-quick-sub { font-size: 0.74em; color: var(--text-dim); }
 
 /* ─── Search view ─── */
 .search-view { padding: 12px 14px; }
@@ -790,6 +808,17 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
 }
+.cmp-title {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cmp-kicker {
+  font-size: 0.68em;
+  font-weight: 700;
+  color: var(--text-dim);
+}
 .cmp-label {
   font-size: 0.75em;
   font-weight: 600;
@@ -797,6 +826,15 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.cmp-column-labels {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--text-dim);
+  font-size: 0.72em;
+  font-weight: 700;
 }
 .cmp-exit-btn {
   flex-shrink: 0;
@@ -833,6 +871,13 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   line-height: 1.7;
   transition: background 0.15s;
 }
+.cmp-cell-label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.68em;
+  font-weight: 700;
+  color: var(--text-dim);
+}
 .cmp-cell .vnum {
   display: inline-block;
   font-size: 0.7em;
@@ -853,11 +898,13 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 .cmp-cell-primary.cmp-hl-blue { background: var(--hl-blue-bg); }
 .cmp-cell-primary.cmp-hl-pink { background: var(--hl-pink-bg); }
 .cmp-cell-primary { position: relative; }
-.cmp-cell-secondary { color: var(--text-dim); }
+.cmp-cell-secondary { color: var(--text); background: var(--surface); }
 @media (min-width: 768px) {
   .cmp-row { grid-template-columns: 1fr 1fr; gap: 8px; }
   .cmp-cell { padding: 8px 14px; }
   .cmp-cell-secondary { border-left: 1px solid var(--border); }
+  .cmp-column-labels { display: grid; }
+  .cmp-cell-label { display: none; }
 }
 .ct-compare {
   cursor: pointer;
@@ -867,7 +914,7 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  opacity: 0.55;
+  opacity: 0.72;
   transition: opacity 0.15s, background 0.15s;
   margin-left: 6px;
   user-select: none;
