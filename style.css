@@ -118,7 +118,7 @@ header {
   transition: background 0.3s;
 }
 header h1 {
-  flex: 1; font-size: 1.1em; font-weight: 600; cursor: pointer; user-select: none;
+  flex: 1; font-size: 1.1em; font-weight: 700; cursor: pointer; user-select: none; color: var(--header-text); opacity: 1; text-shadow: none;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 header button {
