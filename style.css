@@ -635,6 +635,21 @@ body > .deselect-btn.show { opacity: 1; pointer-events: auto; }
 .note-modal-actions .note-save:hover { opacity: 0.85; }
 .note-modal-actions .note-cancel { background: var(--hover); color: var(--text); }
 .note-modal-actions .note-delete { background: rgba(255,0,0,0.1); color: #c00; }
+.card-share-hint {
+  font-size: 0.8em; color: var(--text-dim); line-height: 1.5; margin: 8px 0 14px;
+}
+.card-share-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.card-share-actions button {
+  padding: 9px 14px; border-radius: 8px; border: none; font-size: 0.85em;
+  cursor: pointer; font-weight: 600; font-family: inherit;
+}
+.card-share-primary { background: var(--accent); color: #fff; }
+.card-share-save { background: var(--hover); color: var(--text); }
+.card-share-cancel { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border) !important; }
+@media (max-width: 420px) {
+  .card-share-actions { flex-direction: column; }
+  .card-share-actions button { width: 100%; }
+}
 
 /* ─── Bottom tab bar ─── */
 #tabBar {

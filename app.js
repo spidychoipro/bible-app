@@ -46,6 +46,56 @@
   const ntOrder = ["마태복음","마가복음","누가복음","요한복음","사도행전","로마서","고린도전서","고린도후서","갈라디아서","에베소서","빌립보서","골로새서","데살로니가전서","데살로니가후서","디모데전서","디모데후서","디도서","빌레몬서","히브리서","야고보서","베드로전서","베드로후서","요한일서","요한이서","요한삼서","유다서","요한계시록"];
   const enOtOrder = Object.keys(koNames).slice(0, 39);
   const enNtOrder = Object.keys(koNames).slice(39);
+  const DAILY_VERSE_REFS = [
+    ["Genesis", 1, 1], ["Exodus", 15, 2], ["Exodus", 33, 14], ["Deuteronomy", 6, 5],
+    ["Deuteronomy", 31, 6], ["Joshua", 1, 9], ["1 Samuel", 16, 7], ["2 Samuel", 22, 31],
+    ["1 Chronicles", 16, 11], ["1 Chronicles", 16, 34], ["2 Chronicles", 7, 14], ["Nehemiah", 8, 10],
+    ["Job", 19, 25], ["Psalms", 4, 8], ["Psalms", 8, 1], ["Psalms", 9, 1],
+    ["Psalms", 16, 8], ["Psalms", 18, 2], ["Psalms", 19, 1], ["Psalms", 23, 1],
+    ["Psalms", 23, 4], ["Psalms", 27, 1], ["Psalms", 27, 14], ["Psalms", 30, 5],
+    ["Psalms", 31, 24], ["Psalms", 34, 8], ["Psalms", 37, 4], ["Psalms", 42, 11],
+    ["Psalms", 46, 1], ["Psalms", 51, 10], ["Psalms", 55, 22], ["Psalms", 56, 3],
+    ["Psalms", 63, 3], ["Psalms", 73, 26], ["Psalms", 84, 11], ["Psalms", 91, 1],
+    ["Psalms", 94, 19], ["Psalms", 100, 5], ["Psalms", 103, 2], ["Psalms", 107, 1],
+    ["Psalms", 118, 24], ["Psalms", 119, 11], ["Psalms", 119, 105], ["Psalms", 121, 1],
+    ["Psalms", 121, 2], ["Psalms", 130, 5], ["Psalms", 139, 14], ["Psalms", 143, 8],
+    ["Proverbs", 3, 5], ["Proverbs", 3, 6], ["Proverbs", 4, 23], ["Proverbs", 11, 25],
+    ["Proverbs", 15, 1], ["Proverbs", 16, 3], ["Proverbs", 16, 9], ["Proverbs", 17, 22],
+    ["Proverbs", 18, 10], ["Proverbs", 19, 21], ["Proverbs", 27, 17], ["Proverbs", 30, 5],
+    ["Ecclesiastes", 3, 11], ["Isaiah", 26, 3], ["Isaiah", 40, 31], ["Isaiah", 41, 10],
+    ["Isaiah", 43, 2], ["Isaiah", 43, 19], ["Isaiah", 55, 6], ["Isaiah", 58, 11],
+    ["Jeremiah", 17, 7], ["Jeremiah", 29, 11], ["Jeremiah", 33, 3], ["Lamentations", 3, 22],
+    ["Lamentations", 3, 23], ["Ezekiel", 36, 26], ["Daniel", 2, 20], ["Hosea", 6, 3],
+    ["Joel", 2, 13], ["Micah", 6, 8], ["Nahum", 1, 7], ["Habakkuk", 3, 18],
+    ["Zephaniah", 3, 17], ["Matthew", 5, 8], ["Matthew", 5, 14], ["Matthew", 5, 16],
+    ["Matthew", 6, 21], ["Matthew", 6, 33], ["Matthew", 7, 7], ["Matthew", 11, 28],
+    ["Matthew", 22, 37], ["Matthew", 28, 20], ["Mark", 10, 27], ["Mark", 12, 30],
+    ["Luke", 1, 37], ["Luke", 6, 31], ["Luke", 10, 27], ["Luke", 11, 9],
+    ["Luke", 12, 34], ["John", 1, 5], ["John", 3, 16], ["John", 4, 24],
+    ["John", 8, 12], ["John", 10, 10], ["John", 14, 1], ["John", 14, 6],
+    ["John", 14, 27], ["John", 15, 5], ["John", 15, 9], ["John", 16, 33],
+    ["Acts", 1, 8], ["Acts", 4, 12], ["Acts", 16, 31], ["Acts", 20, 35],
+    ["Romans", 1, 16], ["Romans", 5, 1], ["Romans", 5, 8], ["Romans", 8, 1],
+    ["Romans", 8, 28], ["Romans", 8, 31], ["Romans", 10, 9], ["Romans", 12, 2],
+    ["Romans", 12, 12], ["Romans", 12, 21], ["Romans", 15, 13], ["1 Corinthians", 10, 13],
+    ["1 Corinthians", 13, 4], ["1 Corinthians", 13, 13], ["1 Corinthians", 15, 57], ["1 Corinthians", 16, 14],
+    ["2 Corinthians", 3, 17], ["2 Corinthians", 4, 16], ["2 Corinthians", 5, 7], ["2 Corinthians", 5, 17],
+    ["2 Corinthians", 9, 8], ["2 Corinthians", 12, 9], ["Galatians", 2, 20], ["Galatians", 5, 22],
+    ["Galatians", 5, 23], ["Galatians", 6, 9], ["Ephesians", 2, 8], ["Ephesians", 2, 10],
+    ["Ephesians", 3, 20], ["Ephesians", 4, 32], ["Ephesians", 6, 10], ["Philippians", 1, 6],
+    ["Philippians", 2, 13], ["Philippians", 4, 4], ["Philippians", 4, 6], ["Philippians", 4, 7],
+    ["Philippians", 4, 13], ["Philippians", 4, 19], ["Colossians", 3, 2], ["Colossians", 3, 12],
+    ["Colossians", 3, 17], ["Colossians", 3, 23], ["1 Thessalonians", 5, 16], ["1 Thessalonians", 5, 17],
+    ["1 Thessalonians", 5, 18], ["1 Thessalonians", 5, 24], ["2 Thessalonians", 3, 3], ["1 Timothy", 4, 12],
+    ["1 Timothy", 6, 6], ["2 Timothy", 1, 7], ["2 Timothy", 2, 15], ["2 Timothy", 3, 16],
+    ["Titus", 2, 11], ["Hebrews", 4, 12], ["Hebrews", 4, 16], ["Hebrews", 10, 23],
+    ["Hebrews", 11, 1], ["Hebrews", 12, 1], ["Hebrews", 12, 2], ["Hebrews", 13, 5],
+    ["Hebrews", 13, 8], ["James", 1, 5], ["James", 1, 17], ["James", 1, 22],
+    ["James", 4, 8], ["1 Peter", 1, 3], ["1 Peter", 2, 9], ["1 Peter", 5, 7],
+    ["2 Peter", 1, 3], ["2 Peter", 3, 18], ["1 John", 1, 9], ["1 John", 3, 1],
+    ["1 John", 4, 7], ["1 John", 4, 18], ["1 John", 4, 19], ["1 John", 5, 14],
+    ["3 John", 1, 4], ["Jude", 1, 24], ["Revelation", 21, 4], ["Revelation", 22, 21],
+  ];
   function getOrder(testament) {
     if (currentLang === 'ko') return testament === 'ot' ? otOrder : ntOrder;
     return testament === 'ot' ? enOtOrder : enNtOrder;
@@ -56,19 +106,14 @@
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
     const dayOfYear = Math.floor((now - start) / 86400000);
-    let total = 0;
-    for (const book of bible) {
-      for (const ch of book.chapters) total += ch.length;
-    }
-    let target = dayOfYear % total;
-    for (const book of bible) {
-      for (let ci = 0; ci < book.chapters.length; ci++) {
-        const ch = book.chapters[ci];
-        if (target < ch.length) {
-          const displayName = currentLang === 'ko' ? (koNames[book.name] || book.name) : book.name;
-          return { book: displayName, ch: ci + 1, v: target + 1, text: ch[target], enName: book.name };
-        }
-        target -= ch.length;
+    for (let i = 0; i < DAILY_VERSE_REFS.length; i++) {
+      const ref = DAILY_VERSE_REFS[(dayOfYear + i) % DAILY_VERSE_REFS.length];
+      const book = bible.find(b => b.name === ref[0]);
+      const chapter = book && book.chapters[ref[1] - 1];
+      const text = chapter && chapter[ref[2] - 1];
+      if (text) {
+        const displayName = currentLang === 'ko' ? (koNames[book.name] || book.name) : book.name;
+        return { book: displayName, ch: ref[1], v: ref[2], text, enName: book.name };
       }
     }
     return null;
@@ -511,7 +556,7 @@
   };
 
   async function loadBibleData(transId) {
-    const CACHE_VER = 'v12';
+    const CACHE_VER = 'v13';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -530,7 +575,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=12';
+      const url = 'data/bible-' + transId + '.json?v=13';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       bible = await resp.json();
@@ -551,7 +596,7 @@
 
 
   async function loadCompareData(transId) {
-    const CACHE_VER = 'v12';
+    const CACHE_VER = 'v13';
     const cacheKey = 'bible_' + transId + '_' + CACHE_VER;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -567,7 +612,7 @@
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 30000);
     try {
-      const url = 'data/bible-' + transId + '.json?v=12';
+      const url = 'data/bible-' + transId + '.json?v=13';
       const resp = await fetch(url, { signal: ctrl.signal });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       compareBible = await resp.json();
@@ -1464,6 +1509,63 @@
     return d.innerHTML;
   }
 
+  function canShareVerseCard(file) {
+    try {
+      return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function downloadVerseCard(url, ref) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bible-verse-' + ref.replace(/[^a-z0-9]/gi, '_') + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(currentLang === 'ko' ? '이미지 저장됨' : 'Image saved');
+  }
+
+  function chooseVerseCardAction(file, ref) {
+    return new Promise(resolve => {
+      let overlay = document.getElementById('cardShareOverlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'cardShareOverlay';
+        overlay.className = 'note-modal-overlay';
+        document.body.appendChild(overlay);
+      }
+      const canShare = canShareVerseCard(file);
+      overlay.innerHTML = `
+        <div class="note-modal card-share-modal">
+          <h3>${currentLang === 'ko' ? '말씀카드' : 'Verse Card'}</h3>
+          <div class="ref">${escHtml(ref)}</div>
+          <div class="card-share-hint">${currentLang === 'ko' ? '공유 전 받는 사람을 확인하세요.' : 'Check the recipient before sharing.'}</div>
+          <div class="card-share-actions">
+            ${canShare ? `<button class="card-share-primary" id="cardShareDo" type="button">${currentLang === 'ko' ? '공유하기' : 'Share'}</button>` : ''}
+            <button class="card-share-save" id="cardSaveDo" type="button">${currentLang === 'ko' ? '이미지 저장' : 'Save Image'}</button>
+            <button class="card-share-cancel" id="cardCancelDo" type="button">${currentLang === 'ko' ? '취소' : 'Cancel'}</button>
+          </div>
+        </div>
+      `;
+      const finish = action => {
+        overlay.classList.remove('open');
+        overlay.innerHTML = '';
+        overlay.onclick = null;
+        resolve(action);
+      };
+      overlay.onclick = e => { if (e.target === overlay) finish('cancel'); };
+      const share = document.getElementById('cardShareDo');
+      const save = document.getElementById('cardSaveDo');
+      const cancel = document.getElementById('cardCancelDo');
+      if (share) share.addEventListener('click', () => finish('share'));
+      if (save) save.addEventListener('click', () => finish('download'));
+      if (cancel) cancel.addEventListener('click', () => finish('cancel'));
+      overlay.classList.add('open');
+    });
+  }
+
   /* ─── Verse card generation ─── */
   async function generateVerseCard(text, ref) {
     const W = 800, H = 1000;
@@ -1534,39 +1636,21 @@
       if (!blob) { showToast('이미지 생성 실패'); return; }
       const file = new File([blob], 'bible-verse.png', { type: 'image/png' });
       const url = URL.createObjectURL(blob);
-
-      // Try Web Share API first
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        const shouldShare = window.confirm(
-          currentLang === 'ko'
-            ? '말씀카드 공유 메뉴를 열까요?\n공유 전에 받는 사람을 한 번 더 확인하세요.\n\n취소하면 이미지로 저장합니다.'
-            : 'Open the verse card share menu?\nPlease double-check the recipient before sharing.\n\nCancel will save the image instead.'
-        );
-        if (shouldShare) {
-          try {
-            await navigator.share({ files: [file], title: ref });
-            URL.revokeObjectURL(url);
-            return;
-          } catch(e) {
-            if (e.name === 'AbortError') {
-              showToast(currentLang === 'ko' ? '공유가 취소되었습니다' : 'Share canceled');
-              URL.revokeObjectURL(url);
-              return;
-            }
-            showToast(currentLang === 'ko' ? '공유 실패, 이미지로 저장합니다' : 'Share failed, saving image');
-          }
+      const action = await chooseVerseCardAction(file, ref);
+      if (action === 'share') {
+        try {
+          await navigator.share({ files: [file], title: ref });
+        } catch(e) {
+          showToast(e.name === 'AbortError'
+            ? (currentLang === 'ko' ? '공유가 취소되었습니다' : 'Share canceled')
+            : (currentLang === 'ko' ? '공유 실패' : 'Share failed'));
         }
+      } else if (action === 'download') {
+        downloadVerseCard(url, ref);
+      } else {
+        showToast(currentLang === 'ko' ? '취소됨' : 'Canceled');
       }
-
-      // Fallback: download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'bible-verse-' + ref.replace(/[^a-z0-9]/gi, '_') + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('이미지 저장됨');
     }, 'image/png');
   }
 
